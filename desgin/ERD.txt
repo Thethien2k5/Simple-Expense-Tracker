@@ -1,0 +1,48 @@
+// Simple Expense Tracker - Sơ đồ kiến trúc mới (Tối ưu Local-only)
+
+// Thông tin các tài khoản cần theo dõi
+Table BankAccount {
+  id integer [pk, increment, note: 'Khóa chính']
+  bankName varchar(100) [not null, note: 'Tên ngân hàng (ví dụ: Vietcombank, Momo)']
+  accountNumber varchar(50) [note: 'Số TK (ẩn 4 số cuối)']
+  iconRes varchar(100) [note: 'Tên file icon trong drawable']
+  colorHex varchar(7) [default: '#1976D2', note: 'Mã màu nhận diện thương hiệu']
+}
+
+// Lưu nguyên thông báo (bóc tách, đối chiếu, list)
+Table RawNotification {
+  id integer [pk, increment, note: 'Khóa chính']
+  bankName varchar(100) [not null, note: 'Tên nguồn thông báo']
+  fullContent text [not null, note: 'Toàn bộ nội dung gốc của thông báo']
+  receivedAt integer [not null, note: 'Thời điểm nhận thông báo (Timestamp)']
+  isProcessed boolean [default: false, note: 'Trạng thái đã được bóc tách hay chưa']
+}
+
+// Nội dung sạch hiện thị dạng bảng cho người dùng xem
+Table Transaction {
+  id integer [pk, increment, note: 'Khóa chính']
+  rawNotificationId integer [ref: > RawNotification.id, note: 'Liên kết tới thông báo gốc']
+  bankAccountId integer [not null, ref: > BankAccount.id, note: 'Ngân hàng thực hiện giao dịch']
+  amount real [not null, note: 'Số tiền (số dương: nhận, số âm: chuyển)']
+  counterparty varchar(255) [note: 'Tên người gửi hoặc người nhận']
+  content text [note: 'Mô tả ngắn gọn về giao dịch']
+  categoryId integer [ref: > Category.id, note: 'Danh mục hiện tại (NULL nếu chưa phân loại)']
+  timestamp integer [not null, note: 'Thời điểm giao dịch thực tế']
+}
+
+// thư viện phân loại các loại hình chi tiêu
+Table Category {
+  id integer [pk, increment, note: 'Khóa chính']
+  name varchar(100) [not null, unique, note: 'Tên danh mục chi tiêu']
+  iconRes varchar(100) [note: 'Icon đại diện']
+  colorHex varchar(7) [default: '#757575', note: 'Mã màu danh mục']
+}
+
+// Bảng "Bộ não" để app tự học Heuristic
+Table AutoRule {
+  id integer [pk, increment, note: 'Khóa chính']
+  targetName varchar(255) [note: 'Tên counterparty hoặc từ khóa']
+  fixedAmount real [note: 'Số tiền cố định (nếu có)']
+  categoryId integer [ref: > Category.id, note: 'Danh mục gợi ý']
+  hitCount integer [default: 0, note: 'Số lần khớp đúng để tăng độ tin cậy']
+}

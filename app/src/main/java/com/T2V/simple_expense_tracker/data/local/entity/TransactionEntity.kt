@@ -23,18 +23,11 @@ import androidx.room.PrimaryKey
             parentColumns = ["id"],
             childColumns = ["bankAccountId"],
             onDelete = ForeignKey.CASCADE
-        ),
-        ForeignKey(
-            entity = CategoryEntity::class,
-            parentColumns = ["id"],
-            childColumns = ["categoryId"],
-            onDelete = ForeignKey.SET_DEFAULT
         )
     ],
     indices = [
         Index("rawNotificationId"),
-        Index("bankAccountId"),
-        Index("categoryId")
+        Index("bankAccountId")
     ]
 )
 data class TransactionEntity(
@@ -45,6 +38,5 @@ data class TransactionEntity(
     val amount: Double,
     val counterparty: String,
     val content: String,
-    val categoryId: Long,
     val timestamp: Long
 )

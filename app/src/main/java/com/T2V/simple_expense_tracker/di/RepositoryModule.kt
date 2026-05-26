@@ -20,12 +20,6 @@ abstract class RepositoryModule {
 
     @Binds
     @Singleton
-    abstract fun bindCategoryRepository(
-        categoryRepositoryImpl: CategoryRepositoryImpl
-    ): CategoryRepository
-
-    @Binds
-    @Singleton
     abstract fun bindTransactionRepository(
         transactionRepositoryImpl: TransactionRepositoryImpl
     ): TransactionRepository
@@ -36,9 +30,4 @@ abstract class RepositoryModule {
         rawNotificationRepositoryImpl: RawNotificationRepositoryImpl
     ): RawNotificationRepository
 
-    @Binds
-    @Singleton
-    abstract fun bindAutoRuleRepository(
-        autoRuleRepositoryImpl: AutoRuleRepositoryImpl
-    ): AutoRuleRepository
 }

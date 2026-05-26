@@ -28,7 +28,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.T2V.simple_expense_tracker.domain.model.Category
 import com.T2V.simple_expense_tracker.domain.model.Transaction
 import com.T2V.simple_expense_tracker.ui.theme.*
 import java.text.SimpleDateFormat
@@ -48,7 +47,6 @@ fun DashboardScreen(
     val state by viewModel.uiState.collectAsState()
 
     var transactionToDetail by remember { mutableStateOf<Transaction?>(null) }
-    var transactionToCategorize by remember { mutableStateOf<Transaction?>(null) }
 
     if (state.isLoading) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -82,18 +80,7 @@ fun DashboardScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             IconButton(onClick = onNotificationClick) {
-                BadgedBox(
-                    badge = {
-                        val unprocessedCount = state.pendingTransactions.size
-                        if (unprocessedCount > 0) {
-                            Badge(containerColor = MaterialTheme.colorScheme.error) {
-                                Text(unprocessedCount.toString(), color = MaterialTheme.colorScheme.onError)
-                            }
-                        }
-                    }
-                ) {
-                    Icon(Icons.Default.Notifications, "Notifications", tint = MaterialTheme.colorScheme.onSurface)
-                }
+                Icon(Icons.Default.Notifications, "Notifications", tint = MaterialTheme.colorScheme.onSurface)
             }
         }
 
@@ -106,16 +93,6 @@ fun DashboardScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // === Section 2: Chờ xử lý ===
-        if (state.pendingTransactions.isNotEmpty()) {
-            PendingSection(
-                pendingTransactions = state.pendingTransactions,
-                onCategorizeClick = { transactionToCategorize = it },
-                onItemClick = { transactionToDetail = it }
-            )
-            Spacer(modifier = Modifier.height(32.dp))
-        }
-
         // === Section 3: Giao dịch gần đây ===
         CollapsibleSection(
             title = "Giao dịch gần đây",
@@ -123,17 +100,15 @@ fun DashboardScreen(
             initiallyExpanded = true
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                state.categorizedTransactions.take(5).forEach { transaction ->
-                    val category = state.getCategoryById(transaction.categoryId)
+                state.recentTransactions.take(5).forEach { transaction ->
                     RecentTransactionItem(
                         transaction = transaction,
-                        category = category,
                         onClick = { transactionToDetail = it }
                     )
                 }
-                if (state.categorizedTransactions.isEmpty()) {
+                if (state.recentTransactions.isEmpty()) {
                     Text(
-                        "Chưa có giao dịch nào được phân loại.",
+                        "Chưa có giao dịch nào diễn ra hôm nay.",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(vertical = 16.dp)
                     )
@@ -164,19 +139,7 @@ fun DashboardScreen(
         TransactionDetailDialog(
             transaction = tx,
             bankName = state.getBankNameById(tx.bankAccountId),
-            category = state.getCategoryById(tx.categoryId),
             onDismiss = { transactionToDetail = null }
-        )
-    }
-
-    transactionToCategorize?.let { tx ->
-        CategorySelectDialog(
-            categories = state.categories,
-            onCategorySelected = { category ->
-                viewModel.categorizeTransaction(tx, category)
-                transactionToCategorize = null
-            },
-            onDismiss = { transactionToCategorize = null }
         )
     }
 }
@@ -284,97 +247,12 @@ private fun BalanceSection(
 }
 
 @Composable
-private fun PendingSection(
-    pendingTransactions: List<Transaction>,
-    onCategorizeClick: (Transaction) -> Unit,
-    onItemClick: (Transaction) -> Unit
-) {
-    Column {
-        Text(
-            text = "Chờ xử lý (${pendingTransactions.size})",
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 16.dp)
-        )
-
-        LazyRow(
-            contentPadding = PaddingValues(horizontal = 20.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            items(pendingTransactions) { tx ->
-                Card(
-                    modifier = Modifier
-                        .width(260.dp)
-                        .clickable { onItemClick(tx) },
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = SurfaceContainerHigh)
-                ) {
-                    Column(modifier = Modifier.padding(20.dp)) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(SurfaceContainerLowest),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                            Column {
-                                Text(
-                                    text = tx.counterparty.takeIf { it.isNotBlank() } ?: "Không xác định",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    maxLines = 1
-                                )
-                                val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
-                                Text(
-                                    text = timeFormat.format(Date(tx.timestamp)),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        val isExpense = tx.amount < 0
-                        Text(
-                            text = formatAmount(tx.amount),
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = if (isExpense) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Button(
-                            onClick = { onCategorizeClick(tx) },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                        ) {
-                            Text("Chọn danh mục", color = MaterialTheme.colorScheme.onPrimary)
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
 private fun RecentTransactionItem(
     transaction: Transaction,
-    category: Category?,
     onClick: (Transaction) -> Unit
 ) {
     val isExpense = transaction.amount < 0
-    val catColor = category?.let { 
-        runCatching { Color(android.graphics.Color.parseColor(it.colorHex)) }.getOrNull()
-    } ?: MaterialTheme.colorScheme.surfaceVariant
+    val iconColor = MaterialTheme.colorScheme.primary
 
     Row(
         modifier = Modifier
@@ -392,13 +270,13 @@ private fun RecentTransactionItem(
                 modifier = Modifier
                     .size(48.dp)
                     .clip(CircleShape)
-                    .background(catColor.copy(alpha = 0.2f)),
+                    .background(iconColor.copy(alpha = 0.2f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    Icons.Default.Star,
+                    if (isExpense) Icons.Default.ShoppingCart else Icons.Default.CheckCircle,
                     contentDescription = null,
-                    tint = catColor
+                    tint = iconColor
                 )
             }
             Column {
@@ -407,11 +285,6 @@ private fun RecentTransactionItem(
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Medium
-                )
-                Text(
-                    text = category?.name ?: "Chưa phân loại",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -566,10 +439,8 @@ private fun DetailListSection(
                 )
             } else {
                 state.dailyTransactions.forEach { transaction ->
-                    val category = state.getCategoryById(transaction.categoryId)
                     RecentTransactionItem(
                         transaction = transaction,
-                        category = category,
                         onClick = onTransactionClick
                     )
                 }
@@ -661,119 +532,105 @@ private fun StatsSection(
             // Đã loại bỏ 2 nút "Thu / Chi" và "Phân loại" khỏi màn hình chính theo yêu cầu
 
             // === KPI Summary Cards ===
-            when (state.statsViewMode) {
-                StatsViewMode.INCOME_EXPENSE -> {
-                    // Thẻ tóm tắt thu/chi/số dư
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 20.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        // Thẻ Thu nhập
-                        Surface(
-                            shape = RoundedCornerShape(16.dp),
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Column(modifier = Modifier.padding(12.dp)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Surface(
-                                        shape = CircleShape,
-                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                                        modifier = Modifier.size(24.dp)
-                                    ) {
-                                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                                            Icon(
-                                                Icons.Default.Add,
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.primary,
-                                                modifier = Modifier.size(14.dp)
-                                            )
-                                        }
-                                    }
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text("Thu nhập", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            // Thẻ tóm tắt thu/chi/số dư
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 20.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Thẻ Thu nhập
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                    Icon(
+                                        Icons.Default.Add,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(14.dp)
+                                    )
                                 }
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    text = formatCurrency(state.statsIncome),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
                             }
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Thu nhập", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        // Thẻ Chi tiêu
-                        Surface(
-                            shape = RoundedCornerShape(16.dp),
-                            color = MaterialTheme.colorScheme.error.copy(alpha = 0.08f),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Column(modifier = Modifier.padding(12.dp)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Surface(
-                                        shape = CircleShape,
-                                        color = MaterialTheme.colorScheme.error.copy(alpha = 0.2f),
-                                        modifier = Modifier.size(24.dp)
-                                    ) {
-                                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                                            Icon(
-                                                Icons.Default.Clear,
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.error,
-                                                modifier = Modifier.size(14.dp)
-                                            )
-                                        }
-                                    }
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text("Chi tiêu", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                }
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    text = formatCurrency(state.statsExpense),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.error
-                                )
-                            }
-                        }
-                    }
-                    // Dòng số dư ròng
-                    val netColor = if (state.statsNetBalance >= 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
-                    val netLabel = if (state.statsNetBalance >= 0) "Dư" else "Thâm hụt"
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = netColor.copy(alpha = 0.06f),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 20.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 10.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text("$netLabel ròng:", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(
-                                text = formatAmount(state.statsNetBalance),
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = netColor
-                            )
-                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = formatCurrency(state.statsIncome),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     }
                 }
-                StatsViewMode.CATEGORY -> {
-                    val categoryData = state.getCategoryChartData()
-                    val totalCat = categoryData.sumOf { it.amount }
+                // Thẻ Chi tiêu
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.08f),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.error.copy(alpha = 0.2f),
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                    Icon(
+                                        Icons.Default.Clear,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Chi tiêu", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = formatCurrency(state.statsExpense),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            }
+            // Dòng số dư ròng
+            val netColor = if (state.statsNetBalance >= 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+            val netLabel = if (state.statsNetBalance >= 0) "Dư" else "Thâm hụt"
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = netColor.copy(alpha = 0.06f),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 20.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("$netLabel ròng:", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(
-                        text = "Tổng: ${formatCurrency(totalCat)}",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 12.dp)
+                        text = formatAmount(state.statsNetBalance),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = netColor
                     )
                 }
             }
@@ -787,59 +644,42 @@ private fun StatsSection(
                     .padding(16.dp),
                 contentAlignment = Alignment.Center
             ) {
-                when (state.statsViewMode) {
-                    StatsViewMode.INCOME_EXPENSE -> {
-                        val chartData = state.getIncomeExpenseChartData()
-                        if (chartData.any { it.income > 0 || it.expense > 0 }) {
-                            when (state.chartType) {
-                                ChartType.BAR -> BarChart(data = chartData)
-                                ChartType.LINE -> LineChart(data = chartData)
-                            }
-                        } else {
-                            Text("Chưa có dữ liệu thống kê", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
+                val chartData = state.getIncomeExpenseChartData()
+                if (chartData.any { it.income > 0 || it.expense > 0 }) {
+                    when (state.chartType) {
+                        ChartType.BAR -> BarChart(data = chartData)
+                        ChartType.LINE -> LineChart(data = chartData)
                     }
-                    StatsViewMode.CATEGORY -> {
-                        val categoryData = state.getCategoryChartData()
-                        if (categoryData.isNotEmpty()) {
-                            when (state.chartType) {
-                                ChartType.BAR -> CategoryBarChart(data = categoryData)
-                                ChartType.LINE -> CategoryLineChart(data = categoryData)
-                            }
-                        } else {
-                            Text("Chưa có dữ liệu phân loại", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
+                } else {
+                    Text("Chưa có dữ liệu thống kê", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
 
             // === Chú giải ===
-            if (state.statsViewMode == StatsViewMode.INCOME_EXPENSE) {
-                Row(
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 12.dp),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(10.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Thu nhập", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Box(
-                        modifier = Modifier
-                            .size(10.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.error)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Chi tiêu", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
+                        .size(10.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Thu nhập", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(modifier = Modifier.width(16.dp))
+                Box(
+                    modifier = Modifier
+                        .size(10.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.error)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Chi tiêu", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
@@ -924,45 +764,6 @@ private fun StatsSection(
                     HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // 2. Chọn loại hình
-                    Text(
-                        text = "LOẠI HÌNH THỐNG KÊ",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        StatsViewMode.entries.forEach { mode ->
-                            val isSelected = state.statsViewMode == mode
-                            val label = when (mode) {
-                                StatsViewMode.INCOME_EXPENSE -> "Thu / Chi"
-                                StatsViewMode.CATEGORY -> "Phân loại"
-                            }
-                            Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .clickable { viewModel.selectViewMode(mode) }
-                            ) {
-                                Text(
-                                    text = label,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier.padding(vertical = 10.dp)
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-                    HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
-                    Spacer(modifier = Modifier.height(16.dp))
 
                     // 3. Chọn cụ thể các thời điểm cần thống kê
                     val listTitle = when (state.statsTimePeriod) {

@@ -17,7 +17,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.T2V.simple_expense_tracker.domain.model.Category
 import com.T2V.simple_expense_tracker.domain.model.Transaction
 import com.T2V.simple_expense_tracker.ui.theme.*
 import java.text.SimpleDateFormat
@@ -31,7 +30,6 @@ import java.util.*
 fun TransactionDetailDialog(
     transaction: Transaction,
     bankName: String,
-    category: Category?,
     onDismiss: () -> Unit
 ) {
     Dialog(
@@ -85,12 +83,7 @@ fun TransactionDetailDialog(
                     valueColor = if (isExpense) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
                     valueFontWeight = FontWeight.SemiBold
                 )
-                // Row: Danh mục
-                DetailRow(
-                    label = "Danh mục",
-                    value = category?.name ?: "Chưa phân loại",
-                    valueColor = MaterialTheme.colorScheme.primary
-                )
+                // Removed Danh mục
 
                 // Box: Nội dung chuyển khoản
                 Spacer(modifier = Modifier.height(8.dp))

@@ -23,24 +23,6 @@ fun BankAccount.toEntity(): BankAccountEntity {
     )
 }
 
-fun CategoryEntity.toDomain(): Category {
-    return Category(
-        id = id,
-        name = name,
-        iconRes = iconRes,
-        colorHex = colorHex
-    )
-}
-
-fun Category.toEntity(): CategoryEntity {
-    return CategoryEntity(
-        id = id,
-        name = name,
-        iconRes = iconRes,
-        colorHex = colorHex
-    )
-}
-
 fun TransactionEntity.toDomain(): Transaction {
     return Transaction(
         id = id,
@@ -49,7 +31,6 @@ fun TransactionEntity.toDomain(): Transaction {
         amount = amount,
         counterparty = counterparty,
         content = content,
-        categoryId = categoryId,
         timestamp = timestamp
     )
 }
@@ -62,7 +43,6 @@ fun Transaction.toEntity(): TransactionEntity {
         amount = amount,
         counterparty = counterparty,
         content = content,
-        categoryId = categoryId,
         timestamp = timestamp
     )
 }
@@ -87,22 +67,3 @@ fun RawNotification.toEntity(): RawNotificationEntity {
     )
 }
 
-fun AutoRuleEntity.toDomain(): AutoRule {
-    return AutoRule(
-        id = id,
-        targetName = targetName,
-        fixedAmount = fixedAmount,
-        categoryId = categoryId,
-        hitCount = hitCount
-    )
-}
-
-fun AutoRule.toEntity(): AutoRuleEntity {
-    return AutoRuleEntity(
-        id = id,
-        targetName = targetName,
-        fixedAmount = fixedAmount,
-        categoryId = categoryId,
-        hitCount = hitCount
-    )
-}

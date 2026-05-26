@@ -3,12 +3,9 @@ package com.T2V.simple_expense_tracker.ui.dashboard
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.T2V.simple_expense_tracker.domain.model.BankAccount
-import com.T2V.simple_expense_tracker.domain.model.Category
 import com.T2V.simple_expense_tracker.domain.model.Transaction
 import com.T2V.simple_expense_tracker.domain.usecase.GetBankAccountsUseCase
-import com.T2V.simple_expense_tracker.domain.usecase.GetCategoriesUseCase
 import com.T2V.simple_expense_tracker.domain.usecase.GetTransactionsUseCase
-import com.T2V.simple_expense_tracker.domain.usecase.UpdateTransactionCategoryUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -17,9 +14,6 @@ import javax.inject.Inject
 
 /** Khoảng thời gian thống kê */
 enum class StatsTimePeriod { DAY, WEEK, MONTH, YEAR }
-
-/** Góc nhìn thống kê: so sánh thu/chi hoặc phân bổ theo danh mục */
-enum class StatsViewMode { INCOME_EXPENSE, CATEGORY }
 
 /** Loại biểu đồ: chỉ Trụ và Đường */
 enum class ChartType { BAR, LINE }
@@ -31,11 +25,9 @@ data class DashboardUiState(
     val isLoading: Boolean = true,
     val bankAccounts: List<BankAccount> = emptyList(),
     val allTransactions: List<Transaction> = emptyList(),
-    val categories: List<Category> = emptyList(),
     val selectedDate: Long = System.currentTimeMillis(),
     val chartType: ChartType = ChartType.BAR,
     val statsTimePeriod: StatsTimePeriod = StatsTimePeriod.DAY,
-    val statsViewMode: StatsViewMode = StatsViewMode.INCOME_EXPENSE,
     val selectedMonth: Int = Calendar.getInstance().get(Calendar.MONTH),
     val selectedYear: Int = Calendar.getInstance().get(Calendar.YEAR),
     val selectedDays: List<Long> = getDefaultDays(),
@@ -91,18 +83,14 @@ data class DashboardUiState(
     /** Tổng số dư = tổng amount của tất cả giao dịch */
     val totalBalance: Double get() = allTransactions.sumOf { it.amount }
 
-    /** Giao dịch chưa phân loại (categoryId mặc định = 1 = "Chưa phân loại") */
-    val pendingTransactions: List<Transaction>
-        get() = allTransactions.filter { it.categoryId <= 1L }
-
-    /** Giao dịch đã phân loại diễn ra trong ngày hôm nay */
-    val categorizedTransactions: List<Transaction>
+    /** Giao dịch diễn ra trong ngày hôm nay (thay cho Giao dịch đã phân loại) */
+    val recentTransactions: List<Transaction>
         get() {
             val todayStart = Calendar.getInstance().apply {
                 set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
             }.timeInMillis
             val todayEnd = todayStart + 86_400_000L
-            return allTransactions.filter { it.categoryId > 1L && it.timestamp in todayStart until todayEnd }
+            return allTransactions.filter { it.timestamp in todayStart until todayEnd }
         }
 
     /** Giao dịch theo ngày được chọn */
@@ -247,26 +235,6 @@ data class DashboardUiState(
         }
     }
 
-    /**
-     * Dữ liệu biểu đồ cho chế độ Phân loại danh mục — tổng số tiền theo từng category trong khoảng thời gian thống kê.
-     */
-    fun getCategoryChartData(): List<CategoryChartData> {
-        val transactions = getStatsTransactions()
-        return categories
-            .filter { it.id > 1L }
-            .map { cat ->
-                val total = transactions
-                    .filter { it.categoryId == cat.id }
-                    .sumOf { kotlin.math.abs(it.amount) }
-                CategoryChartData(cat.name, total, cat.colorHex)
-            }
-            .filter { it.amount > 0 }
-            .sortedByDescending { it.amount }
-    }
-
-    /** Tìm Category theo ID */
-    fun getCategoryById(id: Long): Category? = categories.find { it.id == id }
-
     /** Tìm BankAccount theo ID */
     fun getBankNameById(id: Long): String =
         bankAccounts.find { it.id == id }?.bankName ?: "Không rõ"
@@ -277,48 +245,30 @@ data class DashboardUiState(
     }
 }
 
-/** Dữ liệu thống kê theo danh mục */
-data class CategoryChartData(
-    val name: String,
-    val amount: Double,
-    val colorHex: String
-)
-
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     getBankAccountsUseCase: GetBankAccountsUseCase,
-    getTransactionsUseCase: GetTransactionsUseCase,
-    getCategoriesUseCase: GetCategoriesUseCase,
-    private val updateTransactionCategoryUseCase: UpdateTransactionCategoryUseCase
+    getTransactionsUseCase: GetTransactionsUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
 
     init {
-        // Kết hợp 3 luồng dữ liệu từ DB — khi bất kỳ nguồn nào thay đổi, UI tự cập nhật
+        // Kết hợp 2 luồng dữ liệu từ DB — khi bất kỳ nguồn nào thay đổi, UI tự cập nhật
         viewModelScope.launch {
             combine(
                 getBankAccountsUseCase(),
-                getTransactionsUseCase(),
-                getCategoriesUseCase()
-            ) { accounts, transactions, categories ->
+                getTransactionsUseCase()
+            ) { accounts, transactions ->
                 _uiState.value.copy(
                     isLoading = false,
                     bankAccounts = accounts,
-                    allTransactions = transactions,
-                    categories = categories
+                    allTransactions = transactions
                 )
             }.collect { state ->
                 _uiState.value = state
             }
-        }
-    }
-
-    /** Cập nhật danh mục cho giao dịch chờ xử lý */
-    fun categorizeTransaction(transaction: Transaction, category: Category) {
-        viewModelScope.launch {
-            updateTransactionCategoryUseCase(transaction, category.id)
         }
     }
 
@@ -335,11 +285,6 @@ class DashboardViewModel @Inject constructor(
     /** Thay đổi khoảng thời gian thống kê */
     fun selectTimePeriod(period: StatsTimePeriod) {
         _uiState.update { it.copy(statsTimePeriod = period) }
-    }
-
-    /** Thay đổi chế độ xem thống kê */
-    fun selectViewMode(mode: StatsViewMode) {
-        _uiState.update { it.copy(statsViewMode = mode) }
     }
 
     /** Thay đổi tháng thống kê */

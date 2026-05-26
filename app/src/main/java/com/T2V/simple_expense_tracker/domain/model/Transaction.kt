@@ -10,6 +10,5 @@ data class Transaction(
     val amount: Double,
     val counterparty: String,
     val content: String,
-    val categoryId: Long,
     val timestamp: Long
 )

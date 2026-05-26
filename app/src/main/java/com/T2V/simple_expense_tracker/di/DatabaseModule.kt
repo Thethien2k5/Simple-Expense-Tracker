@@ -25,7 +25,7 @@ object DatabaseModule {
             AppDatabase::class.java,
             AppDatabase.DATABASE_NAME
         )
-        .addCallback(AppDatabase.CALLBACK)
+        .fallbackToDestructiveMigration()
         .build()
     }
 
@@ -39,18 +39,6 @@ object DatabaseModule {
     @Singleton
     fun provideRawNotificationDao(db: AppDatabase): RawNotificationDao {
         return db.rawNotificationDao()
-    }
-
-    @Provides
-    @Singleton
-    fun provideCategoryDao(db: AppDatabase): CategoryDao {
-        return db.categoryDao()
-    }
-
-    @Provides
-    @Singleton
-    fun provideAutoRuleDao(db: AppDatabase): AutoRuleDao {
-        return db.autoRuleDao()
     }
 
     @Provides

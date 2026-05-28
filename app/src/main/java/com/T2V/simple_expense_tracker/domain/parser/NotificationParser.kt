@@ -83,8 +83,8 @@ object NotificationParser {
         if (amount == 0.0) return null
 
         // 2. Phân tích Số tài khoản (accountNumber)
-        // Quét bằng từ khóa: TK, tài khoản, tai khoan, so tk, account
-        val accountRegex = """(?:TK|tài khoản|tai khoan|so tk|account)\s*([0-9xX]+)""".toRegex(RegexOption.IGNORE_CASE)
+        // Quét bằng từ khóa: TK, tài khoản (thanh toán), tai khoan, so tk, account
+        val accountRegex = """(?:TK|tài khoản(?: thanh toán)?|tai khoan(?: thanh toan)?|so tk|account)\s*[:\-]?\s*([0-9xX]+)""".toRegex(RegexOption.IGNORE_CASE)
         var accountNumber = "DEFAULT_ACC"
         val accountMatch = accountRegex.find(content)
         if (accountMatch != null) {
@@ -97,10 +97,10 @@ object NotificationParser {
                 accountNumber = rawAccountMatch.groupValues[1]
             }
         }
-
+ 
         // 3. Phân tích Nội dung giao dịch (content)
-        // Quét bằng các từ khóa: ND, nội dung, noi dung, nd, ref, lý do
-        val contentRegex = """(?:ND|nội dung|noi dung|nd|ref|ly do|lý do)\s*[:\-]?\s*(.+)""".toRegex(RegexOption.IGNORE_CASE)
+        // Quét bằng các từ khóa: ND, nội dung (giao dịch), noi dung, nd, ref, lý do
+        val contentRegex = """(?:ND|nội dung(?: giao dịch| gd)?|noi dung(?: giao dich| gd)?|nd|ref|ly do|lý do)\s*[:\-]?\s*(.+)""".toRegex(RegexOption.IGNORE_CASE)
         var parsedContent = "Giao dịch qua thông báo ngân hàng"
         val contentMatch = contentRegex.find(content)
         if (contentMatch != null) {

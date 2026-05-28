@@ -1,0 +1,124 @@
+{
+  "banks": [
+    {
+      "name": "Vietcombank",
+      "color": "#4CAF50",
+      "packageKeywords": ["vietcombank"],
+      "titleKeywords": ["vietcombank", "vcb"]
+    },
+    {
+      "name": "Techcombank",
+      "color": "#E53935",
+      "packageKeywords": ["tcb"],
+      "titleKeywords": ["techcombank", "tcb"]
+    },
+    {
+      "name": "MB Bank",
+      "color": "#1E88E5",
+      "packageKeywords": ["mbmobile"],
+      "titleKeywords": ["mb bank", "mbbank"]
+    },
+    {
+      "name": "TPBank",
+      "color": "#8E24AA",
+      "packageKeywords": ["tpbank"],
+      "titleKeywords": ["tpbank", "tpb"]
+    },
+    {
+      "name": "BIDV",
+      "color": "#0D47A1",
+      "packageKeywords": ["bidv"],
+      "titleKeywords": ["bidv"]
+    },
+    {
+      "name": "VPBank",
+      "color": "#2E7D32",
+      "packageKeywords": ["vpb"],
+      "titleKeywords": ["vpbank", "vp bank"]
+    },
+    {
+      "name": "Cake by VPBank",
+      "color": "#EC407A",
+      "packageKeywords": ["cake"],
+      "titleKeywords": ["cake"]
+    },
+    {
+      "name": "Sacombank",
+      "color": "#0288D1",
+      "packageKeywords": ["sacombank"],
+      "titleKeywords": ["sacombank"]
+    },
+    {
+      "name": "ACB",
+      "color": "#0091EA",
+      "packageKeywords": ["acb"],
+      "titleKeywords": ["acb"]
+    },
+    {
+      "name": "MSB",
+      "color": "#7E57C2",
+      "packageKeywords": ["msb"],
+      "titleKeywords": ["msb"]
+    },
+    {
+      "name": "TNEX",
+      "color": "#00CBD6",
+      "packageKeywords": ["tnex", "msb.tnex"],
+      "titleKeywords": ["tnex"]
+    }
+  ],
+  "parserConfig": {
+    "amountPatterns": [
+      {
+        "pattern": "(?:(?:GD|giao dịch)\\s*)?([\\+\\-])\\s*([0-9.,]+)\\s*(?:VND|đ|d|vnd|Vnd)",
+        "type": "sign_amount",
+        "signGroup": 1,
+        "amountGroup": 2
+      },
+      {
+        "pattern": "(?:trừ|tru)\\s*([0-9.,]+)\\s*(?:VND|đ|d|vnd)",
+        "type": "fixed_expense",
+        "amountGroup": 1
+      },
+      {
+        "pattern": "(?:tăng|tang|cộng|cong|nhận|nhan)\\s*([0-9.,]+)",
+        "type": "fixed_income",
+        "amountGroup": 1
+      },
+      {
+        "pattern": "(?:giảm|giam|trừ|tru)\\s*([0-9.,]+)",
+        "type": "fixed_expense",
+        "amountGroup": 1
+      },
+      {
+        "pattern": "([0-9.,]+)\\s*(?:VND|đ|d|vnd)",
+        "type": "raw_amount",
+        "amountGroup": 1
+      }
+    ],
+    "expenseKeywords": ["trừ", "tru", "giảm", "giam", "thanh toan", "chuyển khoản đi", "-"],
+    "accountPatterns": [
+      "(?:TK|tài khoản(?: thanh toán)?|tai khoan(?: thanh toan)?|so tk|account)\\s*[:\\-]?\\s*([0-9xX]+)",
+      "\\b([0-9]{8,15})\\b"
+    ],
+    "contentPatterns": [
+      "(?:ND|nội dung(?: giao dịch| gd)?|noi dung(?: giao dich| gd)?|nd|ref|ly do|lý do)\\s*[:\\-]?\\s*(.+)"
+    ],
+    "balanceKeywords": ["số dư", "so du", "sd:", "balance"],
+    "excludeKeywords": [
+      "chuyen", "chuyển", "tien", "tiền", "thanh toan", "thanh toán", 
+      "an trua", "an sang", "mua", "nap", "nạp", "tra no", "trả nợ", 
+      "luong", "lương", "thang", "tháng", "gd", "ck", "banking", "ib", "mb",
+      "chuyen khoan", "chuyển khoản", "nop", "nộp", "rut", "rút", "mat", "mặt"
+    ],
+    "transferPatterns": [
+      "(?:từ|tu|bởi|by|tới|toi|gửi|gui|nhận|nhan|khach hang|kh)\\s+([A-Z0-9\\s]{3,30}?)(?:\\s+chuyen|\\s+ck|\\s+nap|\\s+thanh|\\s+toi|\\s+tai|$)"
+    ],
+    "namePattern": "\\b([A-Z]{2,10}(?:\\s+[A-Z]{1,10}){1,3})\\b",
+    "balancePatterns": [
+      "(?:SD|số dư|so du|balance)\\s*[:\\-]?\\s*([0-9.,]{4,15})",
+      "(?:SD|số dư|so du|balance)[^0-9]*?là\\s*([0-9.,]{4,15})",
+      "(?:SD|số dư|so du|balance)[^0-9]*?[:\\-]\\s*([0-9.,]{4,15})"
+    ]
+  }
+}

@@ -34,6 +34,9 @@ class BankNotificationListenerService : NotificationListenerService() {
     @Inject
     lateinit var transactionRepository: TransactionRepository
 
+    @Inject
+    lateinit var notificationParser: NotificationParser
+
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onBind(intent: Intent?): IBinder? {
@@ -65,37 +68,7 @@ class BankNotificationListenerService : NotificationListenerService() {
      * Nhận dạng xem thông báo có phải từ ứng dụng ngân hàng hoặc chứa biến động số dư chuyển khoản hay không.
      */
     private fun isBankOrTransactionNotification(packageName: String, title: String, text: String): Boolean {
-        val lowerPkg = packageName.lowercase()
-        val lowerTitle = title.lowercase()
-        val lowerText = text.lowercase()
-
-        // 1. Kiểm tra package name của các ngân hàng phổ biến ở Việt Nam
-        val isBankPackage = lowerPkg.contains("vietcombank") ||
-                lowerPkg.contains("tcb") ||
-                lowerPkg.contains("mbmobile") ||
-                lowerPkg.contains("bidv") ||
-                lowerPkg.contains("acb") ||
-                lowerPkg.contains("vpb") ||
-                lowerPkg.contains("cake") ||
-                lowerPkg.contains("sacombank") ||
-                lowerPkg.contains("tpbank") ||
-                lowerPkg.contains("msb") ||
-                lowerPkg.contains("agribank")
-
-        // 2. Kiểm tra từ khóa giao dịch tài chính thông dụng
-        val hasKeywords = (lowerText.contains("số dư") || lowerText.contains("so du") ||
-                lowerText.contains("biến động") || lowerText.contains("bien dong") ||
-                lowerText.contains("tài khoản") || lowerText.contains("tai khoan") ||
-                lowerText.contains("giao dịch") || lowerText.contains("giao dich") ||
-                lowerText.contains("vnd") || lowerText.contains("chuyển khoản") ||
-                lowerText.contains("chuyen khoan")) &&
-                (lowerText.contains("+") || lowerText.contains("-") || 
-                 lowerText.contains("cộng") || lowerText.contains("cong") ||
-                 lowerText.contains("trừ") || lowerText.contains("tru") ||
-                 lowerText.contains("tăng") || lowerText.contains("tang") ||
-                 lowerText.contains("giảm") || lowerText.contains("giam"))
-
-        return isBankPackage || hasKeywords
+        return notificationParser.isBankPackageOrKeywords(packageName, title, text)
     }
 
     /**
@@ -117,34 +90,41 @@ class BankNotificationListenerService : NotificationListenerService() {
             Log.d("BankNotificationService", "Đã lưu thông báo thô vào Database, ID: $insertedNotificationId")
 
             // Bước 3: Gọi bộ lọc Regex để phân tích cú pháp
-            val parsedData = NotificationParser.parse(bankName, text, timestamp)
+            val parsedData = notificationParser.parse(bankName, text, timestamp)
 
             if (parsedData != null) {
-                Log.d("BankNotificationService", "Phân tích thành công: Bank=$bankName, Acc=${parsedData.accountNumber}, Amount=${parsedData.amount}")
+                Log.d("BankNotificationService", "Phân tích thành công: Bank=$bankName, Acc=${parsedData.accountNumber}, Amount=${parsedData.amount}, Balance=${parsedData.balance}")
 
                 // Bước 4: Kiểm tra và lấy/tạo BankAccount tương ứng
                 var bankAccount = bankAccountRepository.getBankAccountByNumber(parsedData.accountNumber)
                 val bankAccountId: Long
+                val txAmount = if (parsedData.isCredit) parsedData.amount else -parsedData.amount
 
                 if (bankAccount == null) {
                     // Nếu là tài khoản ngân hàng mới xuất hiện lần đầu, tự động tạo mới
                     val colorHex = getBankColor(bankName)
+                    val initialBalance = parsedData.balance ?: txAmount
                     val newBankAccount = BankAccount(
                         bankName = bankName,
                         accountNumber = parsedData.accountNumber,
                         iconRes = "account_balance", // Icon mặc định
-                        colorHex = colorHex
+                        colorHex = colorHex,
+                        balance = initialBalance
                     )
                     bankAccountId = bankAccountRepository.insertBankAccount(newBankAccount)
-                    Log.d("BankNotificationService", "Tự động tạo tài khoản ngân hàng mới, ID: $bankAccountId")
+                    Log.d("BankNotificationService", "Tự động tạo tài khoản ngân hàng mới, ID: $bankAccountId, Số dư khởi tạo: $initialBalance")
                 } else {
                     bankAccountId = bankAccount.id
-                    Log.d("BankNotificationService", "Sử dụng tài khoản ngân hàng đã có, ID: $bankAccountId")
+                    val finalBalance = parsedData.balance ?: (bankAccount.balance + txAmount)
+                    val updatedBankAccount = bankAccount.copy(
+                        balance = finalBalance
+                    )
+                    bankAccountRepository.updateBankAccount(updatedBankAccount)
+                    Log.d("BankNotificationService", "Cập nhật tài khoản ngân hàng đã có, ID: $bankAccountId, Số dư mới: $finalBalance")
                 }
 
                 // Bước 5: Ghi nhận Giao dịch chi tiêu/thu nhập
                 // Chi tiêu (expense) ghi số âm, thu nhập (income) ghi số dương
-                val txAmount = if (parsedData.isCredit) parsedData.amount else -parsedData.amount
                 val transaction = Transaction(
                     rawNotificationId = insertedNotificationId,
                     bankAccountId = bankAccountId,
@@ -174,39 +154,13 @@ class BankNotificationListenerService : NotificationListenerService() {
      * Nhận dạng tên ngân hàng từ Package Name hoặc Tiêu đề thông báo.
      */
     private fun detectBankName(packageName: String, title: String): String {
-        val lowerPkg = packageName.lowercase()
-        val lowerTitle = title.lowercase()
-
-        return when {
-            lowerPkg.contains("vietcombank") || lowerTitle.contains("vietcombank") || lowerTitle.contains("vcb") -> "Vietcombank"
-            lowerPkg.contains("tcb") || lowerTitle.contains("techcombank") || lowerTitle.contains("tcb") -> "Techcombank"
-            lowerPkg.contains("mbmobile") || lowerTitle.contains("mb bank") || lowerTitle.contains("mbbank") -> "MB Bank"
-            lowerPkg.contains("tpbank") || lowerTitle.contains("tpbank") || lowerTitle.contains("tpb") -> "TPBank"
-            lowerPkg.contains("bidv") || lowerTitle.contains("bidv") -> "BIDV"
-            lowerPkg.contains("acb") || lowerTitle.contains("acb") -> "ACB"
-            lowerPkg.contains("cake") || lowerTitle.contains("cake") -> "Cake by VPBank"
-            lowerPkg.contains("vpb") || lowerTitle.contains("vpbank") || lowerTitle.contains("vp bank") -> "VPBank"
-            lowerPkg.contains("sacombank") || lowerTitle.contains("sacombank") -> "Sacombank"
-            lowerPkg.contains("msb") || lowerTitle.contains("msb") -> "MSB"
-            else -> title.takeIf { it.isNotBlank() } ?: "Ngân hàng khác"
-        }
+        return notificationParser.detectBankName(packageName, title)
     }
 
     /**
      * Lấy màu sắc đặc trưng của từng ngân hàng để đồng bộ trực quan trên giao diện Dashboard.
      */
     private fun getBankColor(bankName: String): String {
-        return when (bankName) {
-            "Vietcombank" -> "#4CAF50" // Xanh lá VCB
-            "Techcombank" -> "#E53935" // Đỏ TCB
-            "MB Bank" -> "#1E88E5"     // Xanh dương MB
-            "TPBank" -> "#8E24AA"      // Tím TPBank
-            "BIDV" -> "#0D47A1"        // Xanh dương đậm BIDV
-            "VPBank" -> "#2E7D32"      // Xanh VPBank
-            "Cake by VPBank" -> "#EC407A" // Hồng rực rỡ đặc trưng của Cake
-            "Sacombank" -> "#0288D1"   // Xanh Sacombank
-            "ACB" -> "#0091EA"         // Xanh ACB
-            else -> "#757575"          // Màu xám mặc định
-        }
+        return notificationParser.getBankColor(bankName)
     }
 }

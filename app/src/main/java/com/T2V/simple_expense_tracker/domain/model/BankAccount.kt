@@ -8,5 +8,6 @@ data class BankAccount(
     val bankName: String,
     val accountNumber: String,
     val iconRes: String,
-    val colorHex: String
+    val colorHex: String,
+    val balance: Double = 0.0
 )

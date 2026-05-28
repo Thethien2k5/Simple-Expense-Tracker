@@ -9,7 +9,8 @@ fun BankAccountEntity.toDomain(): BankAccount {
         bankName = bankName,
         accountNumber = accountNumber,
         iconRes = iconRes,
-        colorHex = colorHex
+        colorHex = colorHex,
+        balance = balance
     )
 }
 
@@ -19,7 +20,8 @@ fun BankAccount.toEntity(): BankAccountEntity {
         bankName = bankName,
         accountNumber = accountNumber,
         iconRes = iconRes,
-        colorHex = colorHex
+        colorHex = colorHex,
+        balance = balance
     )
 }
 

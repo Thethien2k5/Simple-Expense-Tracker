@@ -162,6 +162,88 @@ fun SettingsPanel(
                             )
                         }
                     }
+
+                    HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
+
+                    // Quyền đọc thông báo ngầm
+                    val context = androidx.compose.ui.platform.LocalContext.current
+                    var isPermissionGranted by remember { mutableStateOf(false) }
+
+                    fun checkPermission() {
+                        val flat = android.provider.Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners")
+                        isPermissionGranted = if (!flat.isNullOrBlank()) {
+                            flat.split(":").any { name ->
+                                val cn = android.content.ComponentName.unflattenFromString(name)
+                                cn != null && cn.packageName == context.packageName
+                            }
+                        } else false
+                    }
+
+                    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+                    DisposableEffect(lifecycleOwner) {
+                        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+                            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                                checkPermission()
+                            }
+                        }
+                        lifecycleOwner.lifecycle.addObserver(observer)
+                        onDispose {
+                            lifecycleOwner.lifecycle.removeObserver(observer)
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                val intent = android.content.Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS").apply {
+                                    addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                context.startActivity(intent)
+                            }
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.Notifications,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Column {
+                                Text(
+                                    "Đọc thông báo ngầm",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    "Tự động ghi nhận thu chi khi có thông báo",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                if (isPermissionGranted) "Đã bật" else "Chưa bật",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = if (isPermissionGranted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Icon(
+                                Icons.Default.ArrowForward,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
                 }
             }
         }

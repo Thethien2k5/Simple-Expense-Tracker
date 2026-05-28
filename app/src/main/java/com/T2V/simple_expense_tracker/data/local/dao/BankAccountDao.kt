@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface BankAccountDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertBankAccount(bankAccount: BankAccountEntity)
+    suspend fun insertBankAccount(bankAccount: BankAccountEntity): Long
 
     @Update
     suspend fun updateBankAccount(bankAccount: BankAccountEntity)
@@ -23,4 +23,7 @@ interface BankAccountDao {
 
     @Query("SELECT * FROM bank_accounts WHERE id = :id")
     suspend fun getBankAccountById(id: Long): BankAccountEntity?
+
+    @Query("SELECT * FROM bank_accounts WHERE accountNumber = :accountNumber LIMIT 1")
+    suspend fun getBankAccountByNumber(accountNumber: String): BankAccountEntity?
 }

@@ -35,4 +35,5 @@ local.properties
 # === Captures ===
 captures/
 
-.agent/
+.agnet/
+db/

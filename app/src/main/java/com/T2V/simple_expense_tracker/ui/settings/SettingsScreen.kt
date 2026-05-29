@@ -1,9 +1,12 @@
 package com.T2V.simple_expense_tracker.ui.settings
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -11,13 +14,20 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.T2V.simple_expense_tracker.ui.theme.*
+import com.T2V.simple_expense_tracker.domain.repository.AppLanguage
+import com.T2V.simple_expense_tracker.R
+import kotlinx.coroutines.launch
+import com.T2V.simple_expense_tracker.util.LocaleHelper
 
 /**
- * Panel "Tùy chỉnh" — hiển thị trong drawer bên trái.
+ * Panel stringResource(id = R.string.settings) — hiển thị trong drawer bên trái.
  * Đã lược bỏ hoàn toàn phần quản lý danh mục chi tiêu, chỉ giữ lại phần Cài đặt hệ thống.
  */
 @Composable
@@ -27,11 +37,15 @@ fun SettingsPanel(
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.uiState.collectAsState()
+    val scope = rememberCoroutineScope()
+    var showThemeDialog by remember { mutableStateOf(false) }
+    var showLanguageDialog by remember { mutableStateOf(false) }
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Background)
+            .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding()
     ) {
         // Header bar: menu | Tùy chỉnh
@@ -45,12 +59,12 @@ fun SettingsPanel(
             IconButton(onClick = onMenuClick) {
                 Icon(
                     imageVector = Icons.Default.Menu,
-                    contentDescription = "Đóng",
+                    contentDescription = stringResource(id = R.string.close),
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
             Text(
-                text = "Tùy chỉnh",
+                text = stringResource(id = R.string.settings),
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.SemiBold
@@ -67,7 +81,7 @@ fun SettingsPanel(
         ) {
             item {
                 Text(
-                    text = "Cài đặt",
+                    text = stringResource(id = R.string.settings_title),
                     style = MaterialTheme.typography.headlineMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(bottom = 16.dp)
@@ -77,13 +91,13 @@ fun SettingsPanel(
             item {
                 Card(
                     shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = SurfaceContainerLow)
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
                 ) {
                     // Cài đặt Ngôn ngữ
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { /* TODO: Chọn ngôn ngữ */ }
+                            .clickable { showLanguageDialog = true }
                             .padding(16.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
@@ -98,7 +112,7 @@ fun SettingsPanel(
                                 tint = MaterialTheme.colorScheme.primary
                             )
                             Text(
-                                "Ngôn ngữ",
+                                stringResource(id = R.string.language),
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -108,7 +122,7 @@ fun SettingsPanel(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                "Tiếng Việt",
+                                state.currentLanguage.displayName,
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -120,13 +134,13 @@ fun SettingsPanel(
                         }
                     }
 
-                    HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
+                    HorizontalDivider(color = DividerMuted)
 
-                    // Cài đặt Giao diện
+                    // Chọn Theme
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { /* TODO: Đổi giao diện */ }
+                            .clickable { showThemeDialog = true }
                             .padding(16.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
@@ -141,7 +155,7 @@ fun SettingsPanel(
                                 tint = MaterialTheme.colorScheme.primary
                             )
                             Text(
-                                "Giao diện",
+                                stringResource(id = R.string.theme),
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -151,19 +165,168 @@ fun SettingsPanel(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                "Tối (Dark)",
+                                state.currentTheme.themeName,
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Icon(
-                                Icons.Default.Info,
+                                Icons.Default.ArrowForward,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
+
+                    if (showThemeDialog) {
+                        ThemeSelectionDialog(
+                            currentTheme = state.currentTheme,
+                            onThemeSelected = {
+                                viewModel.onThemeSelected(it)
+                                showThemeDialog = false
+                            },
+                            onDismiss = { showThemeDialog = false }
+                        )
+                    }
+
+                    if (showLanguageDialog) {
+                        LanguageSelectionDialog(
+                            currentLanguage = state.currentLanguage,
+                            onLanguageSelected = { language ->
+                                scope.launch {
+                                    viewModel.onLanguageSelected(language)
+                                    LocaleHelper.setLocale(context, language.code)
+                                    showLanguageDialog = false
+                                    (context as? android.app.Activity)?.recreate()
+                                }
+                            },
+                            onDismiss = { showLanguageDialog = false }
+                        )
+                    }
+
+                    HorizontalDivider(color = DividerMuted)
                 }
             }
         }
     }
+}
+
+@Composable
+private fun ThemeSelectionDialog(
+    currentTheme: AppTheme,
+    onThemeSelected: (AppTheme) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(text = stringResource(id = R.string.theme), style = MaterialTheme.typography.headlineSmall)
+        },
+        text = {
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(AppTheme.entries) { theme ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { onThemeSelected(theme) }
+                            .background(
+                                if (currentTheme == theme)
+                                    theme.colorScheme.primary.copy(alpha = 0.1f)
+                                    else Transparent
+                            )
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clip(CircleShape)
+                                    .background(theme.colorScheme.primary)
+                            )
+                            Text(
+                                text = theme.themeName,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        if (currentTheme == theme) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = stringResource(id = R.string.selected),
+                                tint = theme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(id = R.string.close))
+            }
+        }
+    )
+}
+
+@Composable
+private fun LanguageSelectionDialog(
+    currentLanguage: AppLanguage,
+    onLanguageSelected: (AppLanguage) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(text = stringResource(id = R.string.language), style = MaterialTheme.typography.headlineSmall)
+        },
+        text = {
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(AppLanguage.entries) { language ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { onLanguageSelected(language) }
+                            .background(
+                                if (currentLanguage == language)
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                                    else Transparent
+                            )
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = language.displayName,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        if (currentLanguage == language) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = stringResource(id = R.string.selected),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(id = R.string.close))
+            }
+        }
+    )
 }

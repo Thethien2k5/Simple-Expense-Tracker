@@ -47,6 +47,10 @@ android {
     buildFeatures {
         compose = true
     }
+
+    kapt {
+        correctErrorTypes = true
+    }
     // Cấu hình Compose với Kotlin 1.9.23 và Compose Compiler 1.5.11
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.11"
@@ -77,6 +81,9 @@ dependencies {
     implementation(libs.hilt.android)
     kapt(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
+
+    // DataStore - Lưu trữ preferences (theme setting)
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
 
     // Navigation Compose và WorkManager - Điều hướng giữa các màn hình và xử lý tác vụ nền
     implementation(libs.androidx.navigation.compose)

@@ -1,35 +1,39 @@
-# Built-in Android Studio and Gradle files
-.gradle/
-build/
-captures/
-*.iml
-.idea/
-local.properties
-
-# Kotlin
-.kotlin/
-
-# Log files
+# === Java ===
+*.class
 *.log
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# APKs
-*.apk
-*.ap_
-
-# Jar/War
+*.ctxt
+.mtj.tmp/
 *.jar
 !gradle-wrapper.jar
 *.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+hs_err_pid*
+replay_pid*
 
-# IDE / Editor specific
-*.swp
-*.swo
-.vscode/
-.idea/workspace.xml
-.idea/libraries/
-.idea/modules.xml
-.idea/assetWizardSettings.xml
+# === Gradle ===
+.gradle/
+build/
+*/build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# === Kotlin ===
+.kotlin/
+
+# === Android Studio / IntelliJ IDEA ===
+.idea/
+*.iml
+*.iws
+.DS_Store
+
+# === Local config ===
+local.properties
+
+# === Captures ===
+captures/
+
+.agnet/
+db/

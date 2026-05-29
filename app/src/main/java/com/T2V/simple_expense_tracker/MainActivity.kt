@@ -22,6 +22,7 @@ import com.T2V.simple_expense_tracker.ui.theme.SimpleExpenseTrackerTheme
 import com.T2V.simple_expense_tracker.ui.theme.SurfaceContainerHigh
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import com.T2V.simple_expense_tracker.ui.notification.NotificationActionViewModel
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -34,6 +35,11 @@ class MainActivity : ComponentActivity() {
                 MainApp()
             }
         }
+    }
+
+    override fun onNewIntent(intent: android.content.Intent?) {
+        super.onNewIntent(intent)
+        setIntent(intent)
     }
 
     private fun tryRebindNotificationListener() {
@@ -58,9 +64,45 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun MainApp() {
+fun MainApp(
+    notificationActionViewModel: NotificationActionViewModel = hiltViewModel()
+) {
     val context = androidx.compose.ui.platform.LocalContext.current
     var showPermissionDialog by remember { mutableStateOf(false) }
+
+    // Theo dõi Intent thay đổi từ Activity (khi nhận thông báo)
+    val activity = context as? android.app.Activity
+    LaunchedEffect(activity?.intent) {
+        activity?.intent?.let { notificationActionViewModel.handleIntent(it) }
+    }
+
+    val anomalyState by notificationActionViewModel.anomalyUiState.collectAsState()
+    val manualParseState by notificationActionViewModel.manualParseUiState.collectAsState()
+
+    // Hiển thị Dialog cảnh báo bất thường số dư
+    if (anomalyState.show) {
+        com.T2V.simple_expense_tracker.ui.notification.AnomalyConfirmationDialog(
+            bankName = anomalyState.bankName,
+            currentBalance = anomalyState.currentBalance,
+            transactionAmount = anomalyState.transactionAmount,
+            expectedBalance = anomalyState.expectedBalance,
+            reportedBalance = anomalyState.reportedBalance,
+            onConfirm = { notificationActionViewModel.confirmAnomaly() },
+            onDismiss = { notificationActionViewModel.rejectAnomaly() }
+        )
+    }
+
+    // Hiển thị Màn hình nhập giao dịch thủ công
+    if (manualParseState.show) {
+        com.T2V.simple_expense_tracker.ui.notification.ManualParseScreen(
+            rawContent = manualParseState.rawContent,
+            bankName = manualParseState.bankName,
+            onSave = { amount, isCredit, accountNumber, content, counterparty ->
+                notificationActionViewModel.saveManualParse(amount, isCredit, accountNumber, content, counterparty)
+            },
+            onDismiss = { notificationActionViewModel.dismissManualParseScreen() }
+        )
+    }
 
     fun checkPermission() {
         val flat = android.provider.Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners")

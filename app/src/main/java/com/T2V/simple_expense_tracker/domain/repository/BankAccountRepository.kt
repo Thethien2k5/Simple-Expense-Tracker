@@ -10,4 +10,5 @@ interface BankAccountRepository {
     fun getAllBankAccounts(): Flow<List<BankAccount>>
     suspend fun getBankAccountById(id: Long): BankAccount?
     suspend fun getBankAccountByNumber(accountNumber: String): BankAccount?
+    suspend fun getBankAccountByName(bankName: String): BankAccount?
 }

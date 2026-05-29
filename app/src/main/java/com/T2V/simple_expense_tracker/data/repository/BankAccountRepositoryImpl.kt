@@ -38,4 +38,8 @@ class BankAccountRepositoryImpl @Inject constructor(
     override suspend fun getBankAccountByNumber(accountNumber: String): BankAccount? {
         return bankAccountDao.getBankAccountByNumber(accountNumber)?.toDomain()
     }
+
+    override suspend fun getBankAccountByName(bankName: String): BankAccount? {
+        return bankAccountDao.getBankAccountByName(bankName)?.toDomain()
+    }
 }

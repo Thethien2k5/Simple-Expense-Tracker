@@ -82,6 +82,9 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.work.runtime.ktx)
 
+    // ML Kit Entity Extraction - AI trích xuất thực thể từ nội dung thông báo ngân hàng
+    implementation(libs.mlkit.entity.extraction)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

@@ -26,4 +26,7 @@ interface BankAccountDao {
 
     @Query("SELECT * FROM bank_accounts WHERE accountNumber = :accountNumber LIMIT 1")
     suspend fun getBankAccountByNumber(accountNumber: String): BankAccountEntity?
+
+    @Query("SELECT * FROM bank_accounts WHERE bankName = :bankName LIMIT 1")
+    suspend fun getBankAccountByName(bankName: String): BankAccountEntity?
 }

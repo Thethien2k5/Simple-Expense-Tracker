@@ -8,4 +8,5 @@ interface RawNotificationRepository {
     suspend fun updateNotification(notification: RawNotification)
     fun getUnprocessedNotifications(): Flow<List<RawNotification>>
     fun getAllNotifications(): Flow<List<RawNotification>>
+    suspend fun getNotificationById(id: Long): RawNotification?
 }

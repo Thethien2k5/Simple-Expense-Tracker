@@ -10,9 +10,9 @@
 - **Framework UI:** Jetpack Compose (100%)
 - **Kiến trúc:** Clean Architecture + MVVM
 - **Dependency Injection:** Hilt
-- **Cơ sở dữ liệu:** Room
-- **Xử lý nền:** WorkManager (đã cấu hình dependency)
-- **Điều hướng:** Jetpack Navigation Compose (đã cấu hình dependency)
+- **Cơ sở dữ liệu:** Room (Local DB), DataStore (Preferences)
+- **Xử lý nền:** `BankNotificationListenerService` để đọc thông báo, cấu hình sẵn WorkManager (nếu cần thiết).
+- **Điều hướng:** Tích hợp thông qua cơ chế View-State và hệ thống Modal Drawer thay vì NavHost phức tạp.
 
 ---
 
@@ -20,29 +20,37 @@
 
 - `app/src/main/java/com/T2V/simple_expense_tracker/`:
   - `ExpenseTrackerApp.kt`: Lớp Application khởi tạo Hilt.
-  - `MainActivity.kt`: Entry point với hệ thống Double Navigation Drawers (Tùy chỉnh bên trái & Thông báo bên phải) bao bọc nội dung chính (Dashboard).
-  - `/di`: Các Module của Dagger Hilt để cung cấp các phụ thuộc (`DatabaseModule` và `RepositoryModule` đã triển khai).
+  - `MainActivity.kt`: Entry point với hệ thống Double Navigation Drawers (Settings bên trái & Notification Panel bên phải) bao bọc nội dung chính (Dashboard).
+  - `/di`: Các Module của Dagger Hilt cung cấp phụ thuộc:
+    - `AppModule.kt`: Các phụ thuộc cấp ứng dụng.
+    - `DatabaseModule.kt`: Cung cấp Room Database và DAOs.
+    - `DataStoreModule.kt`: Cung cấp DataStore cho Preferences (Theme, Language).
+    - `RepositoryModule.kt`: Cung cấp các Repositories.
   - `/data`: Tầng dữ liệu, bao gồm:
-    - `/local`: Quản lý Room Database (`AppDatabase`), các DAO (`/dao`) và thực thể cơ sở dữ liệu (`/entity`).
+    - `/local`: Quản lý Room Database (`AppDatabase`), các DAO (`BankAccountDao`, `RawNotificationDao`, `TransactionDao`) và thực thể cơ sở dữ liệu (`/entity`).
     - `/mapper`: Ánh xạ dữ liệu giữa Database Entities và Domain Models.
-    - `/repository`: Triển khai các Repository interface từ tầng domain.
+    - `/repository`: Triển khai các Repository interface từ tầng domain (BankAccount, Language, RawNotification, Theme, Transaction).
   - `/domain`: Tầng nghiệp vụ cốt lõi (Business Logic):
-    - `/model`: Định nghĩa cấu trúc dữ liệu thuần túy (Domain Models).
+    - `/config`: Cấu hình hệ thống (`ConfigManager`).
+    - `/model`: Định nghĩa cấu trúc dữ liệu thuần túy (Domain Models như `Transaction`, `BankAccount`, `RawNotification`).
+    - `/parser`: `NotificationParser` chịu trách nhiệm phân tích nội dung thông báo ngân hàng để bóc tách thông tin giao dịch.
     - `/repository`: Khai báo các interface của Repository.
-    - `/usecase`: Định nghĩa các kịch bản sử dụng (Use Cases) của hệ thống.
+    - `/usecase`: Các kịch bản sử dụng (Lấy thông báo, tài khoản, giao dịch...).
   - `/ui`: Tầng giao diện người dùng (MVVM) sử dụng Jetpack Compose:
-    - `/dashboard`: Màn hình chính với 4 section (Số dư, Gần đây, Chi tiết, Thống kê), bao gồm các components biểu đồ (`ChartComponents`) và dialogs.
-    - `/ledger`: Giao diện danh sách thông báo gốc (NotificationPanel - Drawer phải).
-    - `/settings`: Giao diện Tùy chỉnh (SettingsPanel - Drawer trái).
-    - `/theme`: Bảng màu thiết kế Material3 Custom Dark Theme, typography (tương thích Geist).
-  - `/service` *(Chưa triển khai)*: Dịch vụ nghe thông báo (`NotificationListenerService`) và các tác vụ nền (`WorkManager`).
+    - `/dashboard`: Màn hình chính với các section (Số dư, Gần đây, Chi tiết, Thống kê), biểu đồ (`ChartComponents`) và `TransactionDetailDialog`.
+    - `/ledger`: Giao diện danh sách thông báo gốc / sổ cái phụ (NotificationPanel).
+    - `/notification`: Xử lý các UI liên quan đến luồng nhận thông báo mới (Cảnh báo số dư bất thường `AnomalyConfirmationDialog`, Nhập giao dịch thủ công `ManualParseScreen`, và `NotificationActionViewModel`).
+    - `/settings`: Giao diện Cài đặt hệ thống (SettingsPanel).
+    - `/theme`: Bảng màu thiết kế Material3 Custom Dark Theme, typography. Bao gồm cả `AppStrings.kt` (quản lý đa ngôn ngữ 100% Kotlin qua CompositionLocal).
+  - `/service`: Dịch vụ chạy ngầm (`BankNotificationListenerService`) lắng nghe thông báo biến động số dư từ ngân hàng.
+  - `/util`: Các lớp tiện ích chung (như `LocaleHelper`).
 
 ---
 
-## 3. Sơ đồ Thực thể Cơ sở dữ liệu mới (ERD)
+## 3. Sơ đồ Thực thể Cơ sở dữ liệu (ERD)
 
 ```dbml
-// Simple Expense Tracker - Sơ đồ kiến trúc mới (Tối ưu Local-only, loại bỏ Category & AutoRule)
+// Simple Expense Tracker - Sơ đồ kiến trúc DB (Tối ưu Local-only)
 
 // Thông tin các tài khoản cần theo dõi
 Table BankAccount {
@@ -78,8 +86,9 @@ Table Transaction {
 
 ## 4. Luồng Dữ liệu Quan trọng
 
-- **Luồng Phân tích Thông báo (Dự kiến):** `NotificationListenerService` -> `ParseNotificationUseCase` -> `SaveTransactionUseCase` -> Room DB.
-- **Luồng Hiển thị:** Room DB -> Repository -> UseCases -> ViewModel (StateFlow) -> Compose UI. Dữ liệu được theo dõi thời gian thực thông qua Kotlin Flows.
+- **Luồng Bắt Thông Báo Ngân Hàng:** `BankNotificationListenerService` đọc thông báo -> Gửi Intent Broadcast -> `NotificationActionViewModel` -> `NotificationParser` bóc tách dữ liệu -> Nếu có bất thường/không bóc tách được thì hiển thị Dialog xác nhận / Nhập tay -> `TransactionRepository` -> Room DB.
+- **Luồng Hiển thị Giao diện:** Room DB -> Repository -> UseCases -> ViewModel (StateFlow) -> Compose UI. Dữ liệu được theo dõi thời gian thực thông qua Kotlin Flows.
+- **Luồng Đa Ngôn Ngữ & Giao diện:** Cấu hình đọc từ DataStore -> Flow truyền tới `MainActivity` -> `CompositionLocalProvider` (Cung cấp `LocalAppStrings`, `MaterialTheme`) -> Toàn bộ Compose Components tái render ngay lập tức mà không cần Android Context (Resource).
 
 ---
 
@@ -88,17 +97,18 @@ Table Transaction {
 - **Ngôn ngữ:** Tất cả chú thích và giải thích trong mã nguồn phải bằng **Tiếng Việt**.
 - **UI:** Không sử dụng XML layouts, 100% Jetpack Compose.
 - **Dependency Injection:** Sử dụng Hilt để quản lý sự phụ thuộc giữa các lớp.
-- **Địa phương hóa:** Ứng dụng hoạt động 100% local, không yêu cầu internet cho xử lý cơ bản.
+- **Đa ngôn ngữ (Localization):** Quản lý 100% bằng Kotlin thông qua `CompositionLocal` (`LocalAppStrings`), không phụ thuộc vào `res/values/strings.xml` của Android (chỉ giữ lại XML cho tên ứng dụng ở màn hình nền).
+- **Địa phương hóa:** Ứng dụng hoạt động 100% local, không yêu cầu internet, không có server backend.
 
 ---
 
 ## 6. Nhật ký Thay đổi & Lộ trình
 
-- `[2024-05-22]` - `[Khởi tạo]`: Thiết lập cấu trúc dự án theo Clean Architecture, nâng cấp Version Catalog và cấu hình Hilt/Room.
-- `[2024-05-22]` - `[Thêm]`: Triển khai toàn bộ tầng dữ liệu (Entities, DAOs, AppDatabase) theo sơ đồ DBML.
-- `[2026-05-25]` - `[Cập nhật]`: Triển khai các Hilt Modules và UseCases cơ bản của Domain.
-- `[2026-05-25]` - `[Hoàn thành UI]`: Hoàn thiện toàn bộ giao diện dựa trên thiết kế mẫu. Xây dựng MainActivity với 2 Drawers, cấu hình Custom Dark Theme, và tạo chi tiết 5 Sections trong Dashboard. Liên kết ViewModel để hiển thị luồng dữ liệu thời gian thực.
-- `[2026-05-26]` - `[Refactor & Gỡ bỏ Category]`: Xóa bỏ hoàn toàn tính năng Phân loại giao dịch (Category) và Quy tắc tự động (AutoRule) từ cơ sở dữ liệu lên tới giao diện. Cập nhật cơ sở dữ liệu Room lên phiên bản 2. Thu gọn Dashboard từ 5 xuống 4 section (bỏ "Chờ xử lý"). Cài đặt lại Panel cài đặt tối giản.
+- `[2024-05-22]` - `[Khởi tạo]`: Thiết lập cấu trúc dự án theo Clean Architecture, nâng cấp Version Catalog và cấu hình Hilt/Room. Trải qua bước tạo Entity, DAO, AppDatabase.
+- `[2026-05-25]` - `[Cập nhật]`: Triển khai các Hilt Modules và UseCases cơ bản của Domain. Hoàn thiện toàn bộ giao diện (Double Drawers, Custom Dark Theme).
+- `[2026-05-26]` - `[Refactor]`: Gỡ bỏ hoàn toàn tính năng Phân loại giao dịch (Category) và Quy tắc tự động (AutoRule) từ DB lên UI để tinh gọn hệ thống.
+- `[2026-05-30]` - `[Hoàn thiện Notification]`: Tích hợp đầy đủ `BankNotificationListenerService`, parser xử lý nội dung thông báo ngân hàng (`NotificationParser`) và giao diện kiểm soát thông báo (`AnomalyConfirmationDialog`, `ManualParseScreen`, `NotificationActionViewModel`).
+- `[2026-05-30]` - `[Chuyển đổi Ngôn Ngữ & Theme]`: Chặn xoay ngang màn hình (portrait). Thay thế 100% màu hardcode bằng màu của theme (`MaterialTheme.colorScheme`). Loại bỏ hoàn toàn đa ngôn ngữ XML (bỏ các folder `values-XX`), cấu trúc lại toàn bộ string dưới dạng object `AppStrings` thuần Kotlin qua `CompositionLocal`. Cải thiện UI Setting Panel với Gradient Icon.
 - `[TODO]`:
-  1. Triển khai dịch vụ `NotificationListenerService` trong gói `/service` để bắt thông báo giao dịch thực tế từ các ngân hàng.
-  2. Triển khai các Use Case xử lý phân tích thông báo (`ParseNotificationUseCase`, `SaveTransactionUseCase`) bằng AI hoặc Regex.
+  1. Tích hợp AI (Gemini Nano hoặc LLM nhẹ) vào `NotificationParser` để tự động bóc tách nội dung giao dịch thông minh hơn nếu hệ thống Regex truyền thống không đủ linh hoạt.
+  2. Bổ sung tính năng sao lưu (Backup/Restore) cơ sở dữ liệu Room lên Google Drive/Local Storage.

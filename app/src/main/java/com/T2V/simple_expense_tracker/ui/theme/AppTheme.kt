@@ -4,10 +4,10 @@ import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
+import com.T2V.simple_expense_tracker.domain.repository.AppLanguage
 
 enum class AppTheme(
     val colorScheme: ColorScheme,
-    val themeName: String,
     val isDark: Boolean
 ) {
     EMERALD(
@@ -38,7 +38,6 @@ enum class AppTheme(
             outline = Outline,
             outlineVariant = OutlineVariant
         ),
-        themeName = "Emerald",
         isDark = true
     ),
     OCEAN(
@@ -69,7 +68,6 @@ enum class AppTheme(
             outline = Outline,
             outlineVariant = OutlineVariant
         ),
-        themeName = "Ocean",
         isDark = false
     ),
     FOREST(
@@ -100,7 +98,6 @@ enum class AppTheme(
             outline = Outline,
             outlineVariant = OutlineVariant
         ),
-        themeName = "Forest",
         isDark = false
     ),
     SUNSET(
@@ -131,7 +128,6 @@ enum class AppTheme(
             outline = Outline,
             outlineVariant = OutlineVariant
         ),
-        themeName = "Sunset",
         isDark = true
     ),
     CANDY(
@@ -162,7 +158,6 @@ enum class AppTheme(
             outline = Outline,
             outlineVariant = OutlineVariant
         ),
-        themeName = "Candy",
         isDark = false
     ),
     LUXURY(
@@ -193,7 +188,6 @@ enum class AppTheme(
             outline = Outline,
             outlineVariant = OutlineVariant
         ),
-        themeName = "Luxury",
         isDark = true
     ),
     MINIMAL(
@@ -224,7 +218,60 @@ enum class AppTheme(
             outline = Outline,
             outlineVariant = OutlineVariant
         ),
-        themeName = "Minimal",
         isDark = false
-    )
+    );
+
+    fun getLocalizedName(language: AppLanguage): String {
+        return when (this) {
+            EMERALD -> when (language) {
+                AppLanguage.VIETNAMESE -> "Ngọc lục bảo"
+                AppLanguage.CHINESE -> "翡翠"
+                AppLanguage.RUSSIAN -> "Изумруд"
+                AppLanguage.JAPANESE -> "エメラルド"
+                else -> "Emerald"
+            }
+            OCEAN -> when (language) {
+                AppLanguage.VIETNAMESE -> "Đại dương"
+                AppLanguage.CHINESE -> "海洋"
+                AppLanguage.RUSSIAN -> "Океан"
+                AppLanguage.JAPANESE -> "オーシャン"
+                else -> "Ocean"
+            }
+            FOREST -> when (language) {
+                AppLanguage.VIETNAMESE -> "Rừng rậm"
+                AppLanguage.CHINESE -> "森林"
+                AppLanguage.RUSSIAN -> "Лес"
+                AppLanguage.JAPANESE -> "フォレスト"
+                else -> "Forest"
+            }
+            SUNSET -> when (language) {
+                AppLanguage.VIETNAMESE -> "Hoàng hôn"
+                AppLanguage.CHINESE -> "日落"
+                AppLanguage.RUSSIAN -> "Закат"
+                AppLanguage.JAPANESE -> "サンセット"
+                else -> "Sunset"
+            }
+            CANDY -> when (language) {
+                AppLanguage.VIETNAMESE -> "Kẹo ngọt"
+                AppLanguage.CHINESE -> "糖果"
+                AppLanguage.RUSSIAN -> "Конфета"
+                AppLanguage.JAPANESE -> "キャンディ"
+                else -> "Candy"
+            }
+            LUXURY -> when (language) {
+                AppLanguage.VIETNAMESE -> "Sang trọng"
+                AppLanguage.CHINESE -> "奢华"
+                AppLanguage.RUSSIAN -> "Роскошь"
+                AppLanguage.JAPANESE -> "ラグジュアリー"
+                else -> "Luxury"
+            }
+            MINIMAL -> when (language) {
+                AppLanguage.VIETNAMESE -> "Tối giản"
+                AppLanguage.CHINESE -> "极简"
+                AppLanguage.RUSSIAN -> "Минимализм"
+                AppLanguage.JAPANESE -> "ミニマル"
+                else -> "Minimal"
+            }
+        }
+    }
 }

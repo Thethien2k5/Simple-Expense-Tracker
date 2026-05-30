@@ -226,7 +226,7 @@ private fun InfoRow(
                 fontWeight = FontWeight.Medium
             )
         }
-        HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
+        HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f))
     }
 }
 
@@ -253,7 +253,7 @@ private fun formatVnd(amount: Double): String {
 @Preview(showBackground = true, backgroundColor = 0xFF0B1326)
 @Composable
 private fun AnomalyConfirmationDialogPreview() {
-    SimpleExpenseTrackerTheme {
+    SimpleExpenseTrackerTheme(theme = AppTheme.EMERALD) {
         AnomalyConfirmationDialog(
             bankName = "Vietcombank",
             currentBalance = 5_000_000.0,

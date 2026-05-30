@@ -35,6 +35,4 @@ local.properties
 # === Captures ===
 
 captures/
-
-.agnet/
 db/

@@ -20,6 +20,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.T2V.simple_expense_tracker.ui.theme.LocalAppStrings
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
@@ -78,7 +79,7 @@ fun DashboardScreen(
                 Icon(Icons.Default.Menu, "Menu", tint = MaterialTheme.colorScheme.onSurface)
             }
             Text(
-                text = stringResource(id = R.string.app_name),
+                text = LocalAppStrings.current.appName,
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -98,7 +99,7 @@ fun DashboardScreen(
 
         // === Section 3: Giao dịch gần đây ===
         CollapsibleSection(
-            title = stringResource(id = R.string.recent_transactions),
+            title = LocalAppStrings.current.recentTransactions,
             modifier = Modifier.padding(horizontal = 20.dp),
             initiallyExpanded = true
         ) {
@@ -111,7 +112,7 @@ fun DashboardScreen(
                 }
                 if (state.recentTransactions.isEmpty()) {
                     Text(
-                        stringResource(id = R.string.no_transactions_today),
+                        LocalAppStrings.current.noTransactionsToday,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(vertical = 16.dp)
                     )
@@ -193,7 +194,7 @@ private fun BalanceSection(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = stringResource(id = R.string.total_balance),
+            text = LocalAppStrings.current.totalBalance,
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -212,7 +213,7 @@ private fun BalanceSection(
                 .padding(horizontal = 12.dp, vertical = 8.dp)
         ) {
             Text(
-                text = stringResource(id = R.string.view_accounts),
+                text = LocalAppStrings.current.viewAccounts,
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary
             )
@@ -316,7 +317,7 @@ private fun RecentTransactionItem(
             }
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = transaction.counterparty.takeIf { it.isNotBlank() } ?: stringResource(id = R.string.unknown_counterparty),
+                    text = transaction.counterparty.takeIf { it.isNotBlank() } ?: LocalAppStrings.current.unknownCounterparty,
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Medium,
@@ -399,7 +400,7 @@ private fun DetailListSection(
     }
 
     CollapsibleSection(
-        title = stringResource(id = R.string.detail_list),
+        title = LocalAppStrings.current.detailList,
         modifier = Modifier.padding(horizontal = 20.dp),
         headerExtra = {
             IconButton(
@@ -408,7 +409,7 @@ private fun DetailListSection(
             ) {
                 Icon(
                     imageVector = Icons.Default.DateRange,
-                    contentDescription = stringResource(id = R.string.select_date),
+                    contentDescription = LocalAppStrings.current.selectDate,
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
@@ -471,7 +472,7 @@ private fun DetailListSection(
             // Danh sách giao dịch trong ngày được chọn
             if (state.dailyTransactions.isEmpty()) {
                 Text(
-                    stringResource(id = R.string.no_transactions_day),
+                    LocalAppStrings.current.noTransactionsDay,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(vertical = 16.dp)
                 )
@@ -500,7 +501,7 @@ private fun StatsSection(
     var showYearPicker by remember { mutableStateOf(false) }
 
     CollapsibleSection(
-        title = stringResource(id = R.string.spending_stats),
+        title = LocalAppStrings.current.spendingStats,
         icon = Icons.Default.Info,
         modifier = Modifier.padding(horizontal = 20.dp),
         headerExtra = {
@@ -511,7 +512,7 @@ private fun StatsSection(
             ) {
                 Icon(
                     imageVector = Icons.Default.Settings,
-                    contentDescription = stringResource(id = R.string.stats_customization),
+                    contentDescription = LocalAppStrings.current.statsCustomization,
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
@@ -528,8 +529,8 @@ private fun StatsSection(
                 ChartType.entries.forEach { type ->
                     val isSelected = state.chartType == type
                     val label = when (type) {
-                        ChartType.BAR -> stringResource(id = R.string.chart_bar)
-                        ChartType.LINE -> stringResource(id = R.string.chart_line)
+                        ChartType.BAR -> LocalAppStrings.current.chartBar
+                        ChartType.LINE -> LocalAppStrings.current.chartLine
                     }
                     val icon = when (type) {
                         ChartType.BAR -> Icons.Default.List
@@ -600,7 +601,7 @@ private fun StatsSection(
                                 }
                             }
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text(stringResource(id = R.string.income), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(LocalAppStrings.current.income, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
@@ -634,7 +635,7 @@ private fun StatsSection(
                                 }
                             }
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text(stringResource(id = R.string.expense), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(LocalAppStrings.current.expense, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
@@ -648,7 +649,7 @@ private fun StatsSection(
             }
             // Dòng số dư ròng
             val netColor = if (state.statsNetBalance >= 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
-            val netLabel = if (state.statsNetBalance >= 0) stringResource(id = R.string.net_surplus) else stringResource(id = R.string.net_deficit)
+            val netLabel = if (state.statsNetBalance >= 0) LocalAppStrings.current.netSurplus else LocalAppStrings.current.netDeficit
             Surface(
                 shape = RoundedCornerShape(12.dp),
                 color = netColor.copy(alpha = 0.06f),
@@ -689,7 +690,7 @@ private fun StatsSection(
                         ChartType.LINE -> LineChart(data = chartData)
                     }
                 } else {
-                    Text(stringResource(id = R.string.no_stats_data), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(LocalAppStrings.current.noStatsData, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
 
@@ -708,7 +709,7 @@ private fun StatsSection(
                         .background(MaterialTheme.colorScheme.primary)
                 )
                 Spacer(modifier = Modifier.width(4.dp))
-                Text(stringResource(id = R.string.income), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(LocalAppStrings.current.income, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(modifier = Modifier.width(16.dp))
                 Box(
                     modifier = Modifier
@@ -717,7 +718,7 @@ private fun StatsSection(
                         .background(MaterialTheme.colorScheme.error)
                 )
                 Spacer(modifier = Modifier.width(4.dp))
-                Text(stringResource(id = R.string.expense), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(LocalAppStrings.current.expense, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
@@ -745,7 +746,7 @@ private fun StatsSection(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = stringResource(id = R.string.stats_customization),
+                            text = LocalAppStrings.current.statsCustomization,
                             style = MaterialTheme.typography.headlineMedium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -762,7 +763,7 @@ private fun StatsSection(
 
                     // 1. Chọn khoảng thời gian
                     Text(
-                        text = stringResource(id = R.string.filter_time_period),
+                        text = LocalAppStrings.current.filterTimePeriod,
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold
@@ -775,10 +776,10 @@ private fun StatsSection(
                         StatsTimePeriod.entries.forEach { period ->
                             val isSelected = state.statsTimePeriod == period
                             val label = when (period) {
-                                StatsTimePeriod.DAY -> stringResource(id = R.string.period_day)
-                                StatsTimePeriod.WEEK -> stringResource(id = R.string.period_week)
-                                StatsTimePeriod.MONTH -> stringResource(id = R.string.period_month)
-                                StatsTimePeriod.YEAR -> stringResource(id = R.string.period_year)
+                                StatsTimePeriod.DAY -> LocalAppStrings.current.periodDay
+                                StatsTimePeriod.WEEK -> LocalAppStrings.current.periodWeek
+                                StatsTimePeriod.MONTH -> LocalAppStrings.current.periodMonth
+                                StatsTimePeriod.YEAR -> LocalAppStrings.current.periodYear
                             }
                             Surface(
                                 shape = RoundedCornerShape(12.dp),
@@ -805,10 +806,10 @@ private fun StatsSection(
 
                     // 3. Chọn cụ thể các thời điểm cần thống kê
                     val listTitle = when (state.statsTimePeriod) {
-                        StatsTimePeriod.DAY -> stringResource(id = R.string.stats_days_list)
-                        StatsTimePeriod.WEEK -> stringResource(id = R.string.stats_weeks_list)
-                        StatsTimePeriod.MONTH -> stringResource(id = R.string.stats_months_list)
-                        StatsTimePeriod.YEAR -> stringResource(id = R.string.stats_years_list)
+                        StatsTimePeriod.DAY -> LocalAppStrings.current.statsDaysList
+                        StatsTimePeriod.WEEK -> LocalAppStrings.current.statsWeeksList
+                        StatsTimePeriod.MONTH -> LocalAppStrings.current.statsMonthsList
+                        StatsTimePeriod.YEAR -> LocalAppStrings.current.statsYearsList
                     }
                     Text(
                         text = listTitle,
@@ -958,7 +959,7 @@ private fun StatsSection(
                                     modifier = Modifier.size(14.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text(stringResource(id = R.string.add), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                                Text(LocalAppStrings.current.add, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                             }
                         }
                     }
@@ -1061,7 +1062,7 @@ private fun StatsSection(
                 modifier = Modifier.padding(16.dp)
             ) {
                 Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(stringResource(id = R.string.select_month_year), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                    Text(LocalAppStrings.current.selectMonthYear, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(modifier = Modifier.height(16.dp))
                     
                     Row(
@@ -1069,11 +1070,11 @@ private fun StatsSection(
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         IconButton(onClick = { tempYear-- }) {
-                            Icon(Icons.Default.ArrowBack, stringResource(id = R.string.prev_year), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Icon(Icons.Default.ArrowBack, LocalAppStrings.current.prevYear, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Text(tempYear.toString(), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
                         IconButton(onClick = { tempYear++ }) {
-                            Icon(Icons.Default.ArrowForward, stringResource(id = R.string.next_year), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Icon(Icons.Default.ArrowForward, LocalAppStrings.current.nextYear, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                     Spacer(modifier = Modifier.height(16.dp))
@@ -1126,7 +1127,7 @@ private fun StatsSection(
                 modifier = Modifier.padding(16.dp)
             ) {
                 Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(stringResource(id = R.string.select_year), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                    Text(LocalAppStrings.current.selectYear, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(modifier = Modifier.height(16.dp))
                     
                     val chunkedYears = years.chunked(3)

@@ -30,6 +30,8 @@ import com.T2V.simple_expense_tracker.ui.settings.SettingsPanel
 import com.T2V.simple_expense_tracker.ui.theme.AppTheme
 import com.T2V.simple_expense_tracker.ui.theme.SimpleExpenseTrackerTheme
 import com.T2V.simple_expense_tracker.ui.theme.SurfaceContainerHigh
+import com.T2V.simple_expense_tracker.ui.theme.LocalAppStrings
+import com.T2V.simple_expense_tracker.ui.theme.getAppStringsForLanguage
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlinx.coroutines.launch
@@ -58,8 +60,13 @@ class MainActivity : ComponentActivity() {
         tryRebindNotificationListener()
         setContent {
             val theme = themeRepository.selectedTheme.collectAsState(initial = AppTheme.EMERALD).value
+            val currentLanguage = languageRepository.selectedLanguage.collectAsState(initial = com.T2V.simple_expense_tracker.domain.repository.AppLanguage.VIETNAMESE).value
+            val appStrings = getAppStringsForLanguage(currentLanguage)
+
             SimpleExpenseTrackerTheme(theme = theme) {
-                MainApp()
+                CompositionLocalProvider(LocalAppStrings provides appStrings) {
+                    MainApp()
+                }
             }
         }
     }
@@ -180,7 +187,7 @@ fun MainApp(
                         context.startActivity(intent)
                     }
                 ) {
-                    Text("Cấp quyền ngay", color = Color.White)
+                    Text("Cấp quyền ngay", color = MaterialTheme.colorScheme.onPrimary)
                 }
             },
             dismissButton = null,

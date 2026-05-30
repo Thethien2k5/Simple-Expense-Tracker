@@ -15,6 +15,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.T2V.simple_expense_tracker.ui.theme.LocalAppStrings
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 //import androidx.compose.ui.graphics.Color
@@ -29,7 +30,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 /**
- * Panel stringResource(id = R.string.notification_list) — hiển thị trong drawer bên phải.
+ * Panel LocalAppStrings.current.notificationList — hiển thị trong drawer bên phải.
  * Hiển thị thông báo giao dịch ở dạng thô chưa qua xử lý.
  * Thiết kế theo ảnh d81a8864884b0915505a5.jpg.
  */
@@ -57,7 +58,7 @@ fun NotificationPanel(
         ) {
 
             Text(
-                text = stringResource(id = R.string.notification_list),
+                text = LocalAppStrings.current.notificationList,
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.primary
             )
@@ -156,9 +157,9 @@ private fun NotificationCard(notification: RawNotification) {
            Spacer(modifier = Modifier.height(4.dp))
                     // Badge trạng thái
                     val (badgeText, badgeColor) = if (notification.isProcessed) {
-                        stringResource(id = R.string.status_processed) to MaterialTheme.colorScheme.primary
+                        LocalAppStrings.current.statusProcessed to MaterialTheme.colorScheme.primary
                     } else {
-                        stringResource(id = R.string.status_unparsed) to MaterialTheme.colorScheme.error
+                        LocalAppStrings.current.statusUnparsed to MaterialTheme.colorScheme.error
                     }
                     Box(
                         modifier = Modifier

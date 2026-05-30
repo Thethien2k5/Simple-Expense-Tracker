@@ -14,8 +14,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.T2V.simple_expense_tracker.ui.theme.LocalAppStrings
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -27,7 +29,7 @@ import kotlinx.coroutines.launch
 import com.T2V.simple_expense_tracker.util.LocaleHelper
 
 /**
- * Panel stringResource(id = R.string.settings) — hiển thị trong drawer bên trái.
+ * Panel LocalAppStrings.current.settings — hiển thị trong drawer bên trái.
  * Đã lược bỏ hoàn toàn phần quản lý danh mục chi tiêu, chỉ giữ lại phần Cài đặt hệ thống.
  */
 @Composable
@@ -59,12 +61,12 @@ fun SettingsPanel(
             IconButton(onClick = onMenuClick) {
                 Icon(
                     imageVector = Icons.Default.Menu,
-                    contentDescription = stringResource(id = R.string.close),
+                    contentDescription = LocalAppStrings.current.close,
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
             Text(
-                text = stringResource(id = R.string.settings),
+                text = LocalAppStrings.current.settings,
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.SemiBold
@@ -81,7 +83,7 @@ fun SettingsPanel(
         ) {
             item {
                 Text(
-                    text = stringResource(id = R.string.settings_title),
+                    text = LocalAppStrings.current.settingsTitle,
                     style = MaterialTheme.typography.headlineMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(bottom = 16.dp)
@@ -112,7 +114,7 @@ fun SettingsPanel(
                                 tint = MaterialTheme.colorScheme.primary
                             )
                             Text(
-                                stringResource(id = R.string.language),
+                                LocalAppStrings.current.language,
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -155,7 +157,7 @@ fun SettingsPanel(
                                 tint = MaterialTheme.colorScheme.primary
                             )
                             Text(
-                                stringResource(id = R.string.theme),
+                                LocalAppStrings.current.theme,
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -165,7 +167,7 @@ fun SettingsPanel(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                state.currentTheme.themeName,
+                                state.currentTheme.getLocalizedName(state.currentLanguage),
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -179,6 +181,7 @@ fun SettingsPanel(
                     if (showThemeDialog) {
                         ThemeSelectionDialog(
                             currentTheme = state.currentTheme,
+                            currentLanguage = state.currentLanguage,
                             onThemeSelected = {
                                 viewModel.onThemeSelected(it)
                                 showThemeDialog = false
@@ -212,13 +215,14 @@ fun SettingsPanel(
 @Composable
 private fun ThemeSelectionDialog(
     currentTheme: AppTheme,
+    currentLanguage: AppLanguage,
     onThemeSelected: (AppTheme) -> Unit,
     onDismiss: () -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text(text = stringResource(id = R.string.theme), style = MaterialTheme.typography.headlineSmall)
+            Text(text = LocalAppStrings.current.theme, style = MaterialTheme.typography.headlineSmall)
         },
         text = {
             LazyColumn(
@@ -246,12 +250,17 @@ private fun ThemeSelectionDialog(
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(24.dp)
+                                    .size(28.dp)
                                     .clip(CircleShape)
-                                    .background(theme.colorScheme.primary)
+                                    .background(
+                                        brush = Brush.linearGradient(
+                                            colors = listOf(theme.colorScheme.primary, theme.colorScheme.tertiary)
+                                        )
+                                    )
+                                    .border(2.dp, theme.colorScheme.onSurface.copy(alpha = 0.2f), CircleShape)
                             )
                             Text(
-                                text = theme.themeName,
+                                text = theme.getLocalizedName(currentLanguage),
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -259,7 +268,7 @@ private fun ThemeSelectionDialog(
                         if (currentTheme == theme) {
                             Icon(
                                 imageVector = Icons.Default.Check,
-                                contentDescription = stringResource(id = R.string.selected),
+                                contentDescription = LocalAppStrings.current.selected,
                                 tint = theme.colorScheme.primary
                             )
                         }
@@ -269,7 +278,7 @@ private fun ThemeSelectionDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(id = R.string.close))
+                Text(LocalAppStrings.current.close)
             }
         }
     )
@@ -284,7 +293,7 @@ private fun LanguageSelectionDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text(text = stringResource(id = R.string.language), style = MaterialTheme.typography.headlineSmall)
+            Text(text = LocalAppStrings.current.language, style = MaterialTheme.typography.headlineSmall)
         },
         text = {
             LazyColumn(
@@ -314,7 +323,7 @@ private fun LanguageSelectionDialog(
                         if (currentLanguage == language) {
                             Icon(
                                 imageVector = Icons.Default.Check,
-                                contentDescription = stringResource(id = R.string.selected),
+                                contentDescription = LocalAppStrings.current.selected,
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         }
@@ -324,7 +333,7 @@ private fun LanguageSelectionDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(id = R.string.close))
+                Text(LocalAppStrings.current.close)
             }
         }
     )

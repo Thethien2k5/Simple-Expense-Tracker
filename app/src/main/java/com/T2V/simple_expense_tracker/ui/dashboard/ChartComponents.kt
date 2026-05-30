@@ -17,7 +17,6 @@ import androidx.compose.ui.text.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.T2V.simple_expense_tracker.ui.theme.ChartMarkerInner
 
 /**
  * Dữ liệu cho một cột trong biểu đồ trụ — lưu cả thu nhập và chi tiêu
@@ -147,6 +146,7 @@ fun LineChart(
     val errorColor = MaterialTheme.colorScheme.error
     val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
     val gridColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+    val onSurface = MaterialTheme.colorScheme.onSurface
 
     val animationProgress = remember { Animatable(0f) }
     LaunchedEffect(data) {
@@ -214,7 +214,7 @@ fun LineChart(
                     center = Offset(stepX * i, valueToY(point.income))
                 )
                 drawCircle(
-                    color = ChartMarkerInner,
+                    color = onSurface,
                     radius = 2.5f,
                     center = Offset(stepX * i, valueToY(point.income))
                 )
@@ -252,7 +252,7 @@ fun LineChart(
                     center = Offset(stepX * i, valueToY(point.expense))
                 )
                 drawCircle(
-                    color = ChartMarkerInner,
+                    color = onSurface,
                     radius = 2.5f,
                     center = Offset(stepX * i, valueToY(point.expense))
                 )

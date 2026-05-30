@@ -417,7 +417,7 @@ private fun manualParseTextFieldColors(): TextFieldColors = OutlinedTextFieldDef
 @Preview(showBackground = true, backgroundColor = 0xFF0B1326, showSystemUi = true)
 @Composable
 private fun ManualParseScreenPreview() {
-    SimpleExpenseTrackerTheme {
+    SimpleExpenseTrackerTheme(theme = AppTheme.EMERALD) {
         ManualParseScreen(
             rawContent = "VCB: TK 0123456789 so du -500,000VND luc 29/05/2026 15:30. SD: 4,500,000VND. Noi dung: Thanh toan hoa don dien.",
             bankName = "Vietcombank",

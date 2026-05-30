@@ -1,7 +1,8 @@
 package com.T2V.simple_expense_tracker.ui.theme
 
 import androidx.compose.ui.graphics.Color
-
+import androidx.compose.runtime.Composable
+import androidx.compose.material3.MaterialTheme
 // === Bảng màu thiết kế Material Design 3 Custom (Dark Theme) ===
 // Nguồn: Thiết kế HTML trangchu.txt
 
@@ -291,9 +292,12 @@ val Outline = Color(0xFF86948A)
 val OutlineVariant = Color(0xFF3C4A42)
 
 // === UI Component Colors (không phải Material tokens) ===
-val DividerMuted = Color.White.copy(alpha = 0.05f)
-val ChartMarkerInner = Color.White
-val ChipSelectedText = Color.White
+val DividerMuted: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
+val ChartMarkerInner: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurface
+val ChipSelectedText: Color
+    @Composable get() = MaterialTheme.colorScheme.onPrimary
 val Transparent = Color.Transparent
 
 

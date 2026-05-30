@@ -13,7 +13,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -246,22 +245,3 @@ private fun formatVnd(amount: Double): String {
     return "${if (amount >= 0) "+" else ""}${formatter.format(amount)} VND"
 }
 
-// ─────────────────────────────────────────────
-// Preview
-// ─────────────────────────────────────────────
-
-@Preview(showBackground = true, backgroundColor = 0xFF0B1326)
-@Composable
-private fun AnomalyConfirmationDialogPreview() {
-    SimpleExpenseTrackerTheme(theme = AppTheme.EMERALD) {
-        AnomalyConfirmationDialog(
-            bankName = "Vietcombank",
-            currentBalance = 5_000_000.0,
-            transactionAmount = -500_000.0,
-            expectedBalance = 4_500_000.0,
-            reportedBalance = 4_200_000.0,
-            onConfirm = {},
-            onDismiss = {}
-        )
-    }
-}

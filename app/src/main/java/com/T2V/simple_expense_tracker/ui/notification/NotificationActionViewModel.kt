@@ -61,9 +61,34 @@ class NotificationActionViewModel @Inject constructor(
                 show = true,
                 bankName = bankName,
                 rawContent = rawContent,
-                notificationId = notificationId
+                notificationId = notificationId,
+                amountText = "",
+                isCredit = false,
+                accountNumber = "",
+                content = "",
+                counterparty = ""
             )
         }
+    }
+
+    // ─────────────────────────────────────────────
+    // Cập nhật State cho form nhập thủ công (Chuẩn MVVM)
+    // ─────────────────────────────────────────────
+    fun updateManualParseState(
+        amountText: String? = null,
+        isCredit: Boolean? = null,
+        accountNumber: String? = null,
+        content: String? = null,
+        counterparty: String? = null
+    ) {
+        val current = _manualParseUiState.value
+        _manualParseUiState.value = current.copy(
+            amountText = amountText ?: current.amountText,
+            isCredit = isCredit ?: current.isCredit,
+            accountNumber = accountNumber ?: current.accountNumber,
+            content = content ?: current.content,
+            counterparty = counterparty ?: current.counterparty
+        )
     }
 
     fun confirmAnomaly() {
@@ -72,6 +97,12 @@ class NotificationActionViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
+                // [GIẢI THÍCH KIẾN TRÚC - TẠI SAO LÀM VẬY]
+                // Quá trình xử lý bất thường gồm 4 bước bắt buộc phải đi cùng nhau (Atomic-like):
+                // 1. Đánh dấu thông báo thô là đã xử lý để không bị quét lại bởi các worker khác.
+                // 2. Chỉnh sửa số dư tài khoản bằng với số dư do ngân hàng báo về (Sửa sai lệch).
+                // 3. Cố gắng trích xuất lại nội dung và đối tác từ thông báo thô để ghi log đầy đủ nhất.
+                // 4. Lưu lại lịch sử giao dịch chênh lệch này để người dùng có thể đối soát sau này.
                 // 1. Cập nhật trạng thái thông báo thô thành đã xử lý
                 val rawNotification = rawNotificationRepository.getNotificationById(state.notificationId)
                 if (rawNotification != null) {
@@ -134,30 +165,30 @@ class NotificationActionViewModel @Inject constructor(
         }
     }
 
-    fun saveManualParse(
-        amount: Double,
-        isCredit: Boolean,
-        accountNumber: String,
-        content: String,
-        counterparty: String
-    ) {
+    fun saveManualParse() {
         val state = _manualParseUiState.value
         if (!state.show) return
+        
+        val amount = state.amountText.toDoubleOrNull() ?: return
 
         viewModelScope.launch {
             try {
                 val rawNotification = rawNotificationRepository.getNotificationById(state.notificationId)
                 val timestamp = rawNotification?.receivedAt ?: System.currentTimeMillis()
-                val txAmount = if (isCredit) amount else -amount
+                val txAmount = if (state.isCredit) amount else -amount
 
-                // 1. Tìm hoặc tạo tài khoản ngân hàng
-                var bankAccount = findBankAccount(accountNumber, state.bankName)
+                // [GIẢI THÍCH KIẾN TRÚC - TẠI SAO LÀM VẬY]
+                // Khi người dùng nhập thủ công, có thể họ nhập một số tài khoản hoàn toàn mới chưa từng tồn tại trong DB.
+                // Hàm findBankAccount sẽ tìm thử, nếu không có, hệ thống BẮT BUỘC phải tạo một tài khoản ảo (ảo hóa) 
+                // với số dư khởi điểm chính bằng số tiền giao dịch, để đảm bảo tính toàn vẹn khóa ngoại (Foreign Key)
+                // trong bảng Transaction.
+                var bankAccount = findBankAccount(state.accountNumber, state.bankName)
                 val bankAccountId: Long
                 if (bankAccount == null) {
                     val colorHex = notificationParser.getBankColor(state.bankName)
                     val newAccount = BankAccount(
                         bankName = state.bankName,
-                        accountNumber = if (accountNumber.isNotEmpty()) accountNumber else "DEFAULT_ACC",
+                        accountNumber = if (state.accountNumber.isNotEmpty()) state.accountNumber else "DEFAULT_ACC",
                         iconRes = "account_balance",
                         colorHex = colorHex,
                         balance = txAmount
@@ -174,8 +205,8 @@ class NotificationActionViewModel @Inject constructor(
                     rawNotificationId = state.notificationId,
                     bankAccountId = bankAccountId,
                     amount = txAmount,
-                    counterparty = counterparty.ifEmpty { "Nhập thủ công" },
-                    content = content.ifEmpty { "Giao dịch thủ công" },
+                    counterparty = state.counterparty.ifEmpty { "Nhập thủ công" },
+                    content = state.content.ifEmpty { "Giao dịch thủ công" },
                     timestamp = timestamp
                 )
                 transactionRepository.insertTransaction(transaction)

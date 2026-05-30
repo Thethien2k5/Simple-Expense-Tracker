@@ -70,7 +70,8 @@
           "(?:TK|TK VCB|tai khoan)\\s*(?:VCB)?\\s*([0-9xX]{6,})"
         ],
         "contentPatterns": [
-          "(?:Ref|ref|\\bND\\b|noi dung|nội dung)\\s*:?\\s*(.+?)(?:\\s+(?:SD|So du|Số dư|s[oố]\\s*d[uư])|\\.|\\z)"
+          "(?:Ref|ref)\\s*:?\\s*([^.]+(?:\\.[^.]+)?)",
+          "(?:\\bND\\b|noi dung|nội dung)\\s*:?\\s*(.+?)(?:\\s+(?:SD|So du|Số dư|s[oố]\\s*d[uư])|\\.|\\z)"
         ],
         "balancePatterns": [
           "(?:Số dư|So du|SD|so du)(?!\\s*TK)(?!\\s*tai khoan)[^0-9+\\-]*?([0-9][0-9.,]{4,20})"
@@ -459,5 +460,5 @@
       "mặt"
     ]
   },
-  "version": 16
+  "version": 17
 }

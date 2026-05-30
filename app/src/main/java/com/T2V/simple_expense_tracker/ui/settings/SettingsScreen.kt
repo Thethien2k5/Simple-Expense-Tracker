@@ -42,6 +42,7 @@ fun SettingsPanel(
     val scope = rememberCoroutineScope()
     var showThemeDialog by remember { mutableStateOf(false) }
     var showLanguageDialog by remember { mutableStateOf(false) }
+    var showAboutDialog by remember { mutableStateOf(false) }
     val context = androidx.compose.ui.platform.LocalContext.current
 
     Column(
@@ -206,6 +207,49 @@ fun SettingsPanel(
                     }
 
                     HorizontalDivider(color = DividerMuted)
+
+                    // Giới thiệu
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showAboutDialog = true }
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.Info,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                "Giới thiệu",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        Icon(
+                            Icons.Default.ArrowForward,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    if (showAboutDialog) {
+                        LaunchedEffect(Unit) {
+                            viewModel.loadAboutInfo()
+                        }
+                        AboutDialog(
+                            aboutInfo = state.aboutInfo,
+                            onDismiss = { showAboutDialog = false }
+                        )
+                    }
+
+                    HorizontalDivider(color = DividerMuted)
                 }
             }
         }
@@ -329,6 +373,34 @@ private fun LanguageSelectionDialog(
                         }
                     }
                 }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(LocalAppStrings.current.close)
+            }
+        }
+    )
+}
+
+@Composable
+private fun AboutDialog(aboutInfo: Map<String, String>?, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(text = "Giới thiệu ứng dụng", style = MaterialTheme.typography.headlineSmall)
+        },
+        text = {
+            if (aboutInfo != null) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Tên: ${aboutInfo?.get("appName")}", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                    Text("Phiên bản: ${aboutInfo?.get("version")}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Tác giả: ${aboutInfo?.get("developer")}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("${aboutInfo?.get("description")}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+                }
+            } else {
+                Text("Đang tải thông tin...", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         },
         confirmButton = {

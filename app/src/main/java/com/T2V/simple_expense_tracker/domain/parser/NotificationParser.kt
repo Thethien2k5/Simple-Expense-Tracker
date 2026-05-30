@@ -371,7 +371,10 @@ class NotificationParser @Inject constructor(
             }
         }
 
-        // Loại bỏ phần số dư trong nội dung nếu có
+        // [GIẢI THÍCH KIẾN TRÚC - TẠI SAO LÀM VẬY]
+        // Nội dung trích xuất bằng Regex (`contentPatterns`) đôi khi quét lố và lấy luôn cả cụm báo số dư phía sau.
+        // Thay vì viết Regex quá phức tạp (dễ bị vỡ nếu ngân hàng đổi format), phương án tối ưu và an toàn hơn là:
+        // Cắt bỏ phần chuỗi tính từ lúc gặp các từ khóa chỉ số dư ("SD", "Số dư"...) đã định nghĩa trong config.
         for (keyword in globalBalanceKeywords) {
             val index = parsedContent.lowercase().indexOf(keyword.lowercase())
             if (index != -1) {
@@ -384,6 +387,9 @@ class NotificationParser @Inject constructor(
         // 4. Phân tích Đối tác (counterparty) — quét trên TOÀN BỘ content gốc
         var counterparty = "Chưa rõ đối tác"
 
+        // [GIẢI THÍCH KIẾN TRÚC - TẠI SAO LÀM VẬY]
+        // Đối tác (Người gửi/nhận) có thể nằm ở bất kỳ đâu, đôi khi nằm ngoài phần `parsedContent` vừa lấy.
+        // Vì vậy, BẮT BUỘC phải quét các Regex tìm đối tác (transferPatterns, namePattern) trên TOÀN BỘ nội dung gốc (content).
         // Cách 1: Quét transferPatterns trên toàn bộ content gốc
         for (patternStr in config.transferPatterns) {
             try {

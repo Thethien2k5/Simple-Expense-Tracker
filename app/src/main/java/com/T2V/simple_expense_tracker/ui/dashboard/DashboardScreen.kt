@@ -242,7 +242,7 @@ private fun BalanceSection(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(16.dp))
-                            .background(SurfaceContainerLow)
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                             .border(1.5.dp, color.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
 
                             .padding(16.dp),
@@ -505,7 +505,7 @@ private fun StatsSection(
         icon = Icons.Default.Info,
         modifier = Modifier.padding(horizontal = 20.dp),
         headerExtra = {
-            // Nút bộ lọc: chỉ hiển thị icon Settings theo yêu cầu
+            // Nút bộ lọc: chỉ hiển thị icon Settings
             IconButton(
                 onClick = { showFilterDialog = true },
                 modifier = Modifier.size(24.dp)
@@ -568,7 +568,6 @@ private fun StatsSection(
                 }
             }
 
-            // Đã loại bỏ 2 nút "Thu / Chi" và "Phân loại" khỏi màn hình chính theo yêu cầu
 
             // === KPI Summary Cards ===
             // Thẻ tóm tắt thu/chi/số dư

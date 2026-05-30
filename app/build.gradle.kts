@@ -11,7 +11,7 @@ plugins {
 
 android {
     namespace = "com.T2V.simple_expense_tracker"
-    // Giữ compileSdk và targetSdk ở mức 34 theo yêu cầu kiến trúc
+
     compileSdk = 34
 
     defaultConfig {

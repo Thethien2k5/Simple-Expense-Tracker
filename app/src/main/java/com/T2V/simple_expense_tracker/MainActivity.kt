@@ -129,11 +129,13 @@ fun MainApp(
     // Hiển thị Màn hình nhập giao dịch thủ công
     if (manualParseState.show) {
         com.T2V.simple_expense_tracker.ui.notification.ManualParseScreen(
-            rawContent = manualParseState.rawContent,
-            bankName = manualParseState.bankName,
-            onSave = { amount, isCredit, accountNumber, content, counterparty ->
-                notificationActionViewModel.saveManualParse(amount, isCredit, accountNumber, content, counterparty)
+            state = manualParseState,
+            onStateChange = { amountText, isCredit, accountNumber, content, counterparty ->
+                notificationActionViewModel.updateManualParseState(
+                    amountText, isCredit, accountNumber, content, counterparty
+                )
             },
+            onSave = { notificationActionViewModel.saveManualParse() },
             onDismiss = { notificationActionViewModel.dismissManualParseScreen() }
         )
     }

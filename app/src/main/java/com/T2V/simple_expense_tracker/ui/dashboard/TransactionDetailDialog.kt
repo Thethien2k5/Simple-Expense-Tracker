@@ -43,7 +43,7 @@ fun TransactionDetailDialog(
                 .padding(horizontal = 16.dp),
             shape = RoundedCornerShape(28.dp),
             colors = CardDefaults.cardColors(
-                containerColor = SurfaceContainerHigh
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
             )
         ) {
             Column(modifier = Modifier.padding(24.dp)) {
@@ -97,7 +97,7 @@ fun TransactionDetailDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.surfaceContainerLowest)
+                        .background(MaterialTheme.colorScheme.surface)
                         .padding(12.dp)
                 ) {
                     Text(

@@ -20,6 +20,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.T2V.simple_expense_tracker.ui.theme.*
+import com.T2V.simple_expense_tracker.domain.model.ManualParseUiState
 
 // ==========================================================================
 // ManualParseScreen.kt
@@ -38,21 +39,14 @@ import com.T2V.simple_expense_tracker.ui.theme.*
  */
 @Composable
 fun ManualParseScreen(
-    rawContent: String,
-    bankName: String,
-    onSave: (amount: Double, isCredit: Boolean, accountNumber: String, content: String, counterparty: String) -> Unit,
+    state: ManualParseUiState,
+    onStateChange: (amountText: String?, isCredit: Boolean?, accountNumber: String?, content: String?, counterparty: String?) -> Unit,
+    onSave: () -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // ── State cho các trường nhập liệu ──
-    var amountText by remember { mutableStateOf("") }
-    var isCredit by remember { mutableStateOf(false) }  // false = Chi tiêu, true = Thu nhập
-    var accountNumber by remember { mutableStateOf("") }
-    var content by remember { mutableStateOf("") }
-    var counterparty by remember { mutableStateOf("") }
-
     // Kiểm tra dữ liệu hợp lệ: số tiền phải > 0
-    val isAmountValid = amountText.toDoubleOrNull()?.let { it > 0 } ?: false
+    val isAmountValid = state.amountText.toDoubleOrNull()?.let { it > 0 } ?: false
 
     val scrollState = rememberScrollState()
 
@@ -86,7 +80,7 @@ fun ManualParseScreen(
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    text = bankName,
+                    text = state.bankName,
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -124,7 +118,7 @@ fun ManualParseScreen(
                             .padding(12.dp)
                     ) {
                         Text(
-                            text = rawContent.ifEmpty { "Không có nội dung" },
+                            text = state.rawContent.ifEmpty { "Không có nội dung" },
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontStyle = FontStyle.Italic
@@ -150,17 +144,17 @@ fun ManualParseScreen(
 
                     // ── Loại giao dịch: Thu nhập / Chi tiêu ──
                     TransactionTypeSelector(
-                        isCredit = isCredit,
-                        onTypeChanged = { isCredit = it }
+                        isCredit = state.isCredit,
+                        onTypeChanged = { onStateChange(null, it, null, null, null) }
                     )
 
                     // ── Số tiền ──
                     OutlinedTextField(
-                        value = amountText,
+                        value = state.amountText,
                         onValueChange = { newValue ->
                             // Chỉ cho phép nhập số và dấu thập phân
                             if (newValue.isEmpty() || newValue.matches(Regex("^\\d*\\.?\\d*$"))) {
-                                amountText = newValue
+                                onStateChange(newValue, null, null, null, null)
                             }
                         },
                         label = { Text("Số tiền (VND)") },
@@ -174,8 +168,8 @@ fun ManualParseScreen(
                         },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         singleLine = true,
-                        isError = amountText.isNotEmpty() && !isAmountValid,
-                        supportingText = if (amountText.isNotEmpty() && !isAmountValid) {
+                        isError = state.amountText.isNotEmpty() && !isAmountValid,
+                        supportingText = if (state.amountText.isNotEmpty() && !isAmountValid) {
                             { Text("Vui lòng nhập số tiền hợp lệ (lớn hơn 0)") }
                         } else null,
                         modifier = Modifier.fillMaxWidth(),
@@ -185,8 +179,8 @@ fun ManualParseScreen(
 
                     // ── Số tài khoản ──
                     OutlinedTextField(
-                        value = accountNumber,
-                        onValueChange = { accountNumber = it },
+                        value = state.accountNumber,
+                        onValueChange = { onStateChange(null, null, it, null, null) },
                         label = { Text("Số tài khoản") },
                         placeholder = { Text("Ví dụ: 0123456789") },
                         leadingIcon = {
@@ -205,8 +199,8 @@ fun ManualParseScreen(
 
                     // ── Nội dung giao dịch ──
                     OutlinedTextField(
-                        value = content,
-                        onValueChange = { content = it },
+                        value = state.content,
+                        onValueChange = { onStateChange(null, null, null, it, null) },
                         label = { Text("Nội dung giao dịch") },
                         placeholder = { Text("Ví dụ: Thanh toán hóa đơn điện") },
                         leadingIcon = {
@@ -224,8 +218,8 @@ fun ManualParseScreen(
 
                     // ── Đối tác (counterparty) ──
                     OutlinedTextField(
-                        value = counterparty,
-                        onValueChange = { counterparty = it },
+                        value = state.counterparty,
+                        onValueChange = { onStateChange(null, null, null, null, it) },
                         label = { Text("Đối tác") },
                         placeholder = { Text("Ví dụ: Công ty ABC") },
                         leadingIcon = {
@@ -246,10 +240,7 @@ fun ManualParseScreen(
             // ── Nút hành động ──
             // Nút chính: Lưu giao dịch
             Button(
-                onClick = {
-                    val amount = amountText.toDoubleOrNull() ?: return@Button
-                    onSave(amount, isCredit, accountNumber, content, counterparty)
-                },
+                onClick = onSave,
                 enabled = isAmountValid,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -410,19 +401,4 @@ private fun manualParseTextFieldColors(): TextFieldColors = OutlinedTextFieldDef
     errorSupportingTextColor = MaterialTheme.colorScheme.error
 )
 
-// ─────────────────────────────────────────────
-// Preview
-// ─────────────────────────────────────────────
 
-@Preview(showBackground = true, backgroundColor = 0xFF0B1326, showSystemUi = true)
-@Composable
-private fun ManualParseScreenPreview() {
-    SimpleExpenseTrackerTheme(theme = AppTheme.EMERALD) {
-        ManualParseScreen(
-            rawContent = "VCB: TK 0123456789 so du -500,000VND luc 29/05/2026 15:30. SD: 4,500,000VND. Noi dung: Thanh toan hoa don dien.",
-            bankName = "Vietcombank",
-            onSave = { _, _, _, _, _ -> },
-            onDismiss = {}
-        )
-    }
-}

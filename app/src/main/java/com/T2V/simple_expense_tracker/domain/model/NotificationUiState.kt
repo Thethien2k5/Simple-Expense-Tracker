@@ -21,5 +21,10 @@ data class ManualParseUiState(
     val show: Boolean = false,
     val bankName: String = "",
     val rawContent: String = "",
-    val notificationId: Long = 0
+    val notificationId: Long = 0,
+    val amountText: String = "",
+    val isCredit: Boolean = false,
+    val accountNumber: String = "",
+    val content: String = "",
+    val counterparty: String = ""
 )

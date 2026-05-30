@@ -12,17 +12,21 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import android.content.Context
+import dagger.hilt.android.qualifiers.ApplicationContext
 
 data class SettingsUiState(
     val isLoading: Boolean = false,
     val currentTheme: AppTheme = AppTheme.EMERALD,
-    val currentLanguage: AppLanguage = AppLanguage.VIETNAMESE
+    val currentLanguage: AppLanguage = AppLanguage.VIETNAMESE,
+    val aboutInfo: Map<String, String>? = null
 )
 
 @HiltViewModel //Nó giống như `@Singleton`, nhưng dành riêng cho ViewModel
 class SettingsViewModel @Inject constructor(
     private val themeRepository: ThemeRepository,
-    private val languageRepository: LanguageRepository
+    private val languageRepository: LanguageRepository,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -49,5 +53,24 @@ class SettingsViewModel @Inject constructor(
 
     suspend fun onLanguageSelected(language: AppLanguage) {
         languageRepository.setLanguage(language)
+    }
+
+    fun loadAboutInfo() {
+        if (_uiState.value.aboutInfo != null) return
+        viewModelScope.launch {
+            try {
+                val jsonString = context.assets.open("in_for.json").bufferedReader().use { it.readText() }
+                val jsonObject = org.json.JSONObject(jsonString)
+                val map = mutableMapOf<String, String>()
+                val keys = jsonObject.keys()
+                while (keys.hasNext()) {
+                    val key = keys.next()
+                    map[key] = jsonObject.getString(key)
+                }
+                _uiState.value = _uiState.value.copy(aboutInfo = map)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
     }
 }

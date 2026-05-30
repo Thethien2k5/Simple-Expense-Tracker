@@ -240,29 +240,34 @@ class NotificationParser @Inject constructor(
      * Phân tích thông báo theo kiến trúc 3 tầng.
      * @return NotificationParseOutput chứa kết quả và trạng thái phân tích.
      */
-        suspend fun parseMultiTier(bankName: String, content: String, timestamp: Long): NotificationParseOutput {
+    suspend fun parseMultiTier(bankName: String, content: String, timestamp: Long): NotificationParseOutput {
         if (content.isBlank()) {
             return NotificationParseOutput(ParseResult.REJECTED)
         }
+
+        // CHUẨN HÓA UNICODE VỀ DẠNG DỰNG SẴN (NFC)
+        // Mục đích: Đồng bộ hóa các ký tự tiếng Việt (VD: "Số dư" dạng tổ hợp và "Số dư" dạng dựng sẵn)
+        // để Regex nhận diện chính xác mà không bị lọt từ khóa.
+        val normalizedContent = java.text.Normalizer.normalize(content, java.text.Normalizer.Form.NFC)
 
         var regexResult: ParsedData? = null
         val bankConfig = banks.find { it.name.equals(bankName, ignoreCase = true) }
         
         if (bankConfig?.parserConfig != null) {
-            regexResult = parseWithRegex(bankName, content, timestamp, bankConfig.parserConfig)
+            regexResult = parseWithRegex(bankName, normalizedContent, timestamp, bankConfig.parserConfig)
         }
         
         if (regexResult == null && globalParserConfig != null) {
-            regexResult = parseWithRegex(bankName, content, timestamp, globalParserConfig!!)
+            regexResult = parseWithRegex(bankName, normalizedContent, timestamp, globalParserConfig!!)
         }
 
         if (regexResult != null) {
             Log.d(TAG, "Phân tích thành công bằng Regex cho $bankName")
-            return NotificationParseOutput(ParseResult.SUCCESS, regexResult, content, bankName)
+            return NotificationParseOutput(ParseResult.SUCCESS, regexResult, normalizedContent, bankName)
         }
 
         Log.d(TAG, "Phân tích thất bại cho $bankName. Từ chối.")
-        return NotificationParseOutput(ParseResult.REJECTED, null, content, bankName)
+        return NotificationParseOutput(ParseResult.REJECTED, null, normalizedContent, bankName)
     }
 
     // ============================================================================
@@ -467,9 +472,11 @@ class NotificationParser @Inject constructor(
      * Dùng cho các phần code cũ chưa chuyển sang kiến trúc mới.
      */
     fun parse(bankName: String, content: String, timestamp: Long): ParsedData? {
+        // Chuẩn hóa Unicode để khắc phục lỗi không khớp do chữ tổ hợp (Decomposed) và dựng sẵn (Precomposed)
+        val normalizedContent = java.text.Normalizer.normalize(content, java.text.Normalizer.Form.NFC)
         val bankConfig = banks.find { it.name.equals(bankName, ignoreCase = true) }
         val parserConfig = bankConfig?.parserConfig ?: globalParserConfig ?: return null
-        return parseWithRegex(bankName, content, timestamp, parserConfig)
+        return parseWithRegex(bankName, normalizedContent, timestamp, parserConfig)
     }
 
     /**

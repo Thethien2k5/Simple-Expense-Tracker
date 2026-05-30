@@ -69,7 +69,7 @@ class BankNotificationListenerService : NotificationListenerService() {
         sbn?.let {
             val packageName = it.packageName
             val extras = it.notification.extras
-            val title = extras.getString("android.title", "") ?: ""
+            val title = extras.getCharSequence("android.title", "")?.toString() ?: ""
             val postTime = it.postTime
 
             // --- Fix: Đọc nội dung với fallback đầy đủ ---

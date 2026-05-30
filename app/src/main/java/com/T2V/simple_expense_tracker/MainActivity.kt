@@ -35,7 +35,6 @@ import com.T2V.simple_expense_tracker.ui.theme.getAppStringsForLanguage
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlinx.coroutines.launch
-import com.T2V.simple_expense_tracker.ui.notification.NotificationActionViewModel
 import kotlinx.coroutines.flow.first
 import com.T2V.simple_expense_tracker.util.LocaleHelper
 import  com.T2V.simple_expense_tracker.domain.repository.LanguageRepository
@@ -98,47 +97,9 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun MainApp(
-    notificationActionViewModel: NotificationActionViewModel = hiltViewModel()
-) {
+fun MainApp() {
     val context = androidx.compose.ui.platform.LocalContext.current
     var showPermissionDialog by remember { mutableStateOf(false) }
-
-    // Theo dõi Intent thay đổi từ Activity (khi nhận thông báo)
-    val activity = context as? android.app.Activity
-    LaunchedEffect(activity?.intent) {
-        activity?.intent?.let { notificationActionViewModel.handleIntent(it) }
-    }
-
-    val anomalyState by notificationActionViewModel.anomalyUiState.collectAsState()
-    val manualParseState by notificationActionViewModel.manualParseUiState.collectAsState()
-
-    // Hiển thị Dialog cảnh báo bất thường số dư
-    if (anomalyState.show) {
-        com.T2V.simple_expense_tracker.ui.notification.AnomalyConfirmationDialog(
-            bankName = anomalyState.bankName,
-            currentBalance = anomalyState.currentBalance,
-            transactionAmount = anomalyState.transactionAmount,
-            expectedBalance = anomalyState.expectedBalance,
-            reportedBalance = anomalyState.reportedBalance,
-            onConfirm = { notificationActionViewModel.confirmAnomaly() },
-            onDismiss = { notificationActionViewModel.rejectAnomaly() }
-        )
-    }
-
-    // Hiển thị Màn hình nhập giao dịch thủ công
-    if (manualParseState.show) {
-        com.T2V.simple_expense_tracker.ui.notification.ManualParseScreen(
-            state = manualParseState,
-            onStateChange = { amountText, isCredit, accountNumber, content, counterparty ->
-                notificationActionViewModel.updateManualParseState(
-                    amountText, isCredit, accountNumber, content, counterparty
-                )
-            },
-            onSave = { notificationActionViewModel.saveManualParse() },
-            onDismiss = { notificationActionViewModel.dismissManualParseScreen() }
-        )
-    }
 
     fun checkPermission() {
         val flat = android.provider.Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners")

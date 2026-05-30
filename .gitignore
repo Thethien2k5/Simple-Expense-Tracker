@@ -33,6 +33,7 @@ build/
 local.properties
 
 # === Captures ===
+
 captures/
 
 .agnet/

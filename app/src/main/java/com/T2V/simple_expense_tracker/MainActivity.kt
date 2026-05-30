@@ -5,6 +5,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxWidth
+ import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
@@ -16,6 +18,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.T2V.simple_expense_tracker.domain.repository.ThemeRepository
 import com.T2V.simple_expense_tracker.ui.dashboard.DashboardScreen
@@ -23,12 +29,15 @@ import com.T2V.simple_expense_tracker.ui.ledger.NotificationPanel
 import com.T2V.simple_expense_tracker.ui.settings.SettingsPanel
 import com.T2V.simple_expense_tracker.ui.theme.AppTheme
 import com.T2V.simple_expense_tracker.ui.theme.SimpleExpenseTrackerTheme
+import com.T2V.simple_expense_tracker.ui.theme.SurfaceContainerHigh
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlinx.coroutines.launch
+import com.T2V.simple_expense_tracker.ui.notification.NotificationActionViewModel
 import kotlinx.coroutines.flow.first
 import com.T2V.simple_expense_tracker.util.LocaleHelper
 import  com.T2V.simple_expense_tracker.domain.repository.LanguageRepository
+
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     @Inject
@@ -46,6 +55,7 @@ class MainActivity : ComponentActivity() {
         }
 
         enableEdgeToEdge()
+        tryRebindNotificationListener()
         setContent {
             val theme = themeRepository.selectedTheme.collectAsState(initial = AppTheme.EMERALD).value
             SimpleExpenseTrackerTheme(theme = theme) {
@@ -53,10 +63,132 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    override fun onNewIntent(intent: android.content.Intent?) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+    }
+
+    private fun tryRebindNotificationListener() {
+        try {
+            val component = android.content.ComponentName(this, com.T2V.simple_expense_tracker.service.BankNotificationListenerService::class.java)
+            val pm = packageManager
+            pm.setComponentEnabledSetting(
+                component,
+                android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                android.content.pm.PackageManager.DONT_KILL_APP
+            )
+            pm.setComponentEnabledSetting(
+                component,
+                android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                android.content.pm.PackageManager.DONT_KILL_APP
+            )
+            android.util.Log.d("MainActivity", "Đã tự động kích hoạt kết nối dịch vụ nghe thông báo (Rebind Service)")
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Lỗi rebind NotificationListenerService: ${e.message}", e)
+        }
+    }
 }
 
 @Composable
-fun MainApp() {
+fun MainApp(
+    notificationActionViewModel: NotificationActionViewModel = hiltViewModel()
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var showPermissionDialog by remember { mutableStateOf(false) }
+
+    // Theo dõi Intent thay đổi từ Activity (khi nhận thông báo)
+    val activity = context as? android.app.Activity
+    LaunchedEffect(activity?.intent) {
+        activity?.intent?.let { notificationActionViewModel.handleIntent(it) }
+    }
+
+    val anomalyState by notificationActionViewModel.anomalyUiState.collectAsState()
+    val manualParseState by notificationActionViewModel.manualParseUiState.collectAsState()
+
+    // Hiển thị Dialog cảnh báo bất thường số dư
+    if (anomalyState.show) {
+        com.T2V.simple_expense_tracker.ui.notification.AnomalyConfirmationDialog(
+            bankName = anomalyState.bankName,
+            currentBalance = anomalyState.currentBalance,
+            transactionAmount = anomalyState.transactionAmount,
+            expectedBalance = anomalyState.expectedBalance,
+            reportedBalance = anomalyState.reportedBalance,
+            onConfirm = { notificationActionViewModel.confirmAnomaly() },
+            onDismiss = { notificationActionViewModel.rejectAnomaly() }
+        )
+    }
+
+    // Hiển thị Màn hình nhập giao dịch thủ công
+    if (manualParseState.show) {
+        com.T2V.simple_expense_tracker.ui.notification.ManualParseScreen(
+            rawContent = manualParseState.rawContent,
+            bankName = manualParseState.bankName,
+            onSave = { amount, isCredit, accountNumber, content, counterparty ->
+                notificationActionViewModel.saveManualParse(amount, isCredit, accountNumber, content, counterparty)
+            },
+            onDismiss = { notificationActionViewModel.dismissManualParseScreen() }
+        )
+    }
+
+    fun checkPermission() {
+        val flat = android.provider.Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners")
+        val isGranted = if (!flat.isNullOrBlank()) {
+            flat.split(":").any { name ->
+                val cn = android.content.ComponentName.unflattenFromString(name)
+                cn != null && cn.packageName == context.packageName
+            }
+        } else false
+        showPermissionDialog = !isGranted
+    }
+
+    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                checkPermission()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    if (showPermissionDialog) {
+        AlertDialog(
+            onDismissRequest = { /* Bắt buộc không cho đóng */ },
+            title = {
+                Text(
+                    text = "Yêu cầu quyền truy cập thông báo ngầm",
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            },
+            text = {
+                Text(
+                    text = "Để ứng dụng có thể tự động ghi nhận giao dịch thu chi từ thông báo biến động số dư các ngân hàng, bạn cần cấp quyền đọc thông báo ngầm cho hệ thống.\n\nĐây là quyền bắt buộc để ứng dụng hoạt động chính xác.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val intent = android.content.Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS").apply {
+                            addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        context.startActivity(intent)
+                    }
+                ) {
+                    Text("Cấp quyền ngay", color = Color.White)
+                }
+            },
+            dismissButton = null,
+            shape = RoundedCornerShape(28.dp),
+            containerColor = SurfaceContainerHigh
+        )
+    }
+
     // Left drawer state (Settings)
     val leftDrawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     // Right drawer state (Notifications)

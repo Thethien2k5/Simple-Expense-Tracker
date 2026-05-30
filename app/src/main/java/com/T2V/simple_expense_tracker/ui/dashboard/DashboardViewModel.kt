@@ -80,8 +80,8 @@ data class DashboardUiState(
         }
     }
 
-    /** Tổng số dư = tổng amount của tất cả giao dịch */
-    val totalBalance: Double get() = allTransactions.sumOf { it.amount }
+    /** Tổng số dư = tổng số dư của tất cả tài khoản ngân hàng */
+    val totalBalance: Double get() = bankAccounts.sumOf { it.balance }
 
     /** Giao dịch diễn ra trong ngày hôm nay (thay cho Giao dịch đã phân loại) */
     val recentTransactions: List<Transaction>
@@ -239,9 +239,9 @@ data class DashboardUiState(
     fun getBankNameById(id: Long): String =
         bankAccounts.find { it.id == id }?.bankName ?: "Không rõ"
 
-    /** Tính số dư của một tài khoản ngân hàng cụ thể */
+    /** Tính số dư của một tài khoản ngân hàng cụ thể từ trường balance */
     fun getAccountBalance(bankAccountId: Long): Double {
-        return allTransactions.filter { it.bankAccountId == bankAccountId }.sumOf { it.amount }
+        return bankAccounts.find { it.id == bankAccountId }?.balance ?: 0.0
     }
 }
 

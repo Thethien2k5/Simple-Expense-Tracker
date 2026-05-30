@@ -131,12 +131,6 @@ private fun NotificationCard(notification: RawNotification) {
                     }
                     Column {
                         Text(
-                            text = stringResource(id = R.string.source_sms_gateway),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
                             text = notification.bankName,
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurface
@@ -159,7 +153,7 @@ private fun NotificationCard(notification: RawNotification) {
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
+           Spacer(modifier = Modifier.height(4.dp))
                     // Badge trạng thái
                     val (badgeText, badgeColor) = if (notification.isProcessed) {
                         stringResource(id = R.string.status_processed) to MaterialTheme.colorScheme.primary

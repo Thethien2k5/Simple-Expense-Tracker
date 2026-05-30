@@ -13,8 +13,8 @@ class BankAccountRepositoryImpl @Inject constructor(
     private val bankAccountDao: BankAccountDao
 ) : BankAccountRepository {
 
-    override suspend fun insertBankAccount(bankAccount: BankAccount) {
-        bankAccountDao.insertBankAccount(bankAccount.toEntity())
+    override suspend fun insertBankAccount(bankAccount: BankAccount): Long {
+        return bankAccountDao.insertBankAccount(bankAccount.toEntity())
     }
 
     override suspend fun updateBankAccount(bankAccount: BankAccount) {
@@ -33,5 +33,13 @@ class BankAccountRepositoryImpl @Inject constructor(
 
     override suspend fun getBankAccountById(id: Long): BankAccount? {
         return bankAccountDao.getBankAccountById(id)?.toDomain()
+    }
+
+    override suspend fun getBankAccountByNumber(accountNumber: String): BankAccount? {
+        return bankAccountDao.getBankAccountByNumber(accountNumber)?.toDomain()
+    }
+
+    override suspend fun getBankAccountByName(bankName: String): BankAccount? {
+        return bankAccountDao.getBankAccountByName(bankName)?.toDomain()
     }
 }

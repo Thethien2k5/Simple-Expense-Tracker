@@ -176,7 +176,6 @@ fun SettingsPanel(
                             )
                         }
                     }
-
                     if (showThemeDialog) {
                         ThemeSelectionDialog(
                             currentTheme = state.currentTheme,

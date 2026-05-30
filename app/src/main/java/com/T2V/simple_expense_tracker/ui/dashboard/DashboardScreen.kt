@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -147,6 +148,41 @@ fun DashboardScreen(
 }
 
 @Composable
+private fun BankLogoBadge(bankName: String, color: Color) {
+    val abbreviation = when {
+        bankName.contains("Vietcombank", ignoreCase = true) || bankName.contains("VCB", ignoreCase = true) -> "VCB"
+        bankName.contains("Techcombank", ignoreCase = true) || bankName.contains("TCB", ignoreCase = true) -> "TCB"
+        bankName.contains("MB Bank", ignoreCase = true) || bankName.contains("MBBank", ignoreCase = true) -> "MB"
+        bankName.contains("TPBank", ignoreCase = true) || bankName.contains("TPB", ignoreCase = true) -> "TPB"
+        bankName.contains("BIDV", ignoreCase = true) -> "BIDV"
+        bankName.contains("VPBank", ignoreCase = true) && !bankName.contains("Cake", ignoreCase = true) -> "VPB"
+        bankName.contains("Cake", ignoreCase = true) -> "CAKE"
+        bankName.contains("Sacombank", ignoreCase = true) -> "STB"
+        bankName.contains("ACB", ignoreCase = true) -> "ACB"
+        bankName.contains("MSB", ignoreCase = true) -> "MSB"
+        bankName.contains("TNEX", ignoreCase = true) -> "TNEX"
+        else -> bankName.take(4).uppercase()
+    }
+    
+    Box(
+        modifier = Modifier
+            .size(width = 46.dp, height = 30.dp)
+            .clip(RoundedCornerShape(6.dp))
+            .background(color.copy(alpha = 0.15f))
+            .border(1.dp, color.copy(alpha = 0.5f), RoundedCornerShape(6.dp)),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = abbreviation,
+            style = MaterialTheme.typography.labelSmall,
+            color = color,
+            fontWeight = FontWeight.Bold,
+            fontSize = 10.sp
+        )
+    }
+}
+
+@Composable
 private fun BalanceSection(
     state: DashboardUiState
 ) {
@@ -204,29 +240,25 @@ private fun BalanceSection(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                            .border(1.dp, color.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(SurfaceContainerLow)
+                            .border(1.5.dp, color.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
+
                             .padding(16.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically, 
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(12.dp)
-                                    .clip(CircleShape)
-                                    .background(color)
-                            )
+                            BankLogoBadge(account.bankName, color)
                             Column {
                                 Text(
                                     text = account.bankName,
                                     style = MaterialTheme.typography.bodyLarge,
                                     color = MaterialTheme.colorScheme.onSurface,
-                                    fontWeight = FontWeight.Medium
+                                    fontWeight = FontWeight.SemiBold
                                 )
                                 Text(
                                     text = account.accountNumber,
@@ -238,8 +270,8 @@ private fun BalanceSection(
                         Text(
                             text = formattedBalance,
                             style = MaterialTheme.typography.bodyLarge,
-                            color = if (balance < 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.SemiBold
+                            color = color,
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
@@ -265,6 +297,7 @@ private fun RecentTransactionItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(
+            modifier = Modifier.weight(1f),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -281,15 +314,18 @@ private fun RecentTransactionItem(
                     tint = iconColor
                 )
             }
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = transaction.counterparty.takeIf { it.isNotBlank() } ?: stringResource(id = R.string.unknown_counterparty),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
+        Spacer(modifier = Modifier.width(16.dp))
         Text(
             text = formatAmount(transaction.amount),
             style = MaterialTheme.typography.bodyLarge,

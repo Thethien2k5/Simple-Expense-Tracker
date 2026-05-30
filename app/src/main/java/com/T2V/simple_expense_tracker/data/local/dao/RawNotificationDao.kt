@@ -18,6 +18,9 @@ interface RawNotificationDao {
     @Query("SELECT * FROM raw_notifications WHERE isProcessed = 0")
     fun getUnprocessedNotifications(): Flow<List<RawNotificationEntity>>
 
+    @Query("SELECT * FROM raw_notifications WHERE id = :id")
+    suspend fun getNotificationById(id: Long): RawNotificationEntity?
+
     @Query("SELECT * FROM raw_notifications ORDER BY receivedAt DESC")
     fun getAllNotifications(): Flow<List<RawNotificationEntity>>
 }

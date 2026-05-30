@@ -32,4 +32,8 @@ class RawNotificationRepositoryImpl @Inject constructor(
             entities.map { it.toDomain() }
         }
     }
+
+    override suspend fun getNotificationById(id: Long): RawNotification? {
+        return rawNotificationDao.getNotificationById(id)?.toDomain()
+    }
 }

@@ -129,12 +129,6 @@ private fun NotificationCard(notification: RawNotification) {
                     }
                     Column {
                         Text(
-                            text = "SOURCE: SMS GATEWAY",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
                             text = notification.bankName,
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurface
@@ -157,26 +151,6 @@ private fun NotificationCard(notification: RawNotification) {
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    // Badge trạng thái
-                    val (badgeText, badgeColor) = if (notification.isProcessed) {
-                        "PROCESSED" to MaterialTheme.colorScheme.primary
-                    } else {
-                        "UNPARSED" to MaterialTheme.colorScheme.error
-                    }
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(4.dp))
-                            .border(1.dp, badgeColor, RoundedCornerShape(4.dp))
-                            .padding(horizontal = 8.dp, vertical = 2.dp)
-                    ) {
-                        Text(
-                            text = badgeText,
-                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                            color = badgeColor,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
                 }
             }
 

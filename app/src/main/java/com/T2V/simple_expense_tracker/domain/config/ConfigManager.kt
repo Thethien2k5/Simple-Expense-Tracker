@@ -25,8 +25,32 @@ class ConfigManager @Inject constructor(
     private val configFile: File = File(context.filesDir, CONFIG_FILE_NAME)
 
     init {
+        syncConfigWithAssets()
+    }
+
+    /**
+     * Đồng bộ file cấu hình: nếu file ở Internal Storage chưa có, hoặc version 
+     * trong assets lớn hơn version hiện tại, thì ghi đè file từ assets.
+     */
+    private fun syncConfigWithAssets() {
         if (!configFile.exists()) {
             copyFromAssets()
+            return
+        }
+        try {
+            val assetJsonString = context.assets.open(CONFIG_FILE_NAME).bufferedReader().use { it.readText() }
+            val assetConfig = JSONObject(assetJsonString)
+            val assetVersion = assetConfig.optInt("version", 0)
+
+            val internalConfig = loadConfig()
+            val internalVersion = internalConfig.optInt("version", 0)
+
+            if (assetVersion > internalVersion) {
+                Log.d(TAG, "Cập nhật $CONFIG_FILE_NAME từ assets (Version $assetVersion > $internalVersion)")
+                copyFromAssets()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Lỗi đồng bộ $CONFIG_FILE_NAME: ${e.message}", e)
         }
     }
 

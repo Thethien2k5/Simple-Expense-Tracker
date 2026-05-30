@@ -25,6 +25,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -293,6 +294,7 @@ private fun RecentTransactionItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(
+            modifier = Modifier.weight(1f),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -309,15 +311,18 @@ private fun RecentTransactionItem(
                     tint = iconColor
                 )
             }
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = transaction.counterparty.takeIf { it.isNotBlank() } ?: "Không xác định",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
+        Spacer(modifier = Modifier.width(16.dp))
         Text(
             text = formatAmount(transaction.amount),
             style = MaterialTheme.typography.bodyLarge,

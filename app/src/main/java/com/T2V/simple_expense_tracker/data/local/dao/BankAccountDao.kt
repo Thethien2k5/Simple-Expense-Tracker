@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.Flow
  */
 @Dao
 interface BankAccountDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertBankAccount(bankAccount: BankAccountEntity): Long
 
     @Update

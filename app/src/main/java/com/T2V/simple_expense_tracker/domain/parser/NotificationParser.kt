@@ -270,17 +270,24 @@ class NotificationParser @Inject constructor(
         }
 
         // === TẦNG 1: Regex từ JSON ===
+        var regexResult: ParsedData? = null
         val bankConfig = banks.find { it.name.equals(bankName, ignoreCase = true) }
-        val parserConfig = bankConfig?.parserConfig ?: globalParserConfig
-
-        if (parserConfig != null) {
-            val regexResult = parseWithRegex(bankName, content, timestamp, parserConfig)
-            if (regexResult != null) {
-                Log.d(TAG, "Tầng 1 (Regex): Phân tích thành công cho $bankName")
-                return NotificationParseOutput(ParseResult.SUCCESS, regexResult, content, bankName)
-            }
-            Log.d(TAG, "Tầng 1 (Regex): Thất bại cho $bankName, chuyển sang Tầng 2 (ML Kit).")
+        
+        // 1. Thử dùng parserConfig riêng của ngân hàng trước
+        if (bankConfig?.parserConfig != null) {
+            regexResult = parseWithRegex(bankName, content, timestamp, bankConfig.parserConfig)
         }
+        
+        // 2. Nếu thất bại hoặc không có config riêng, thử dùng globalParserConfig làm phương án dự phòng
+        if (regexResult == null && globalParserConfig != null) {
+            regexResult = parseWithRegex(bankName, content, timestamp, globalParserConfig!!)
+        }
+
+        if (regexResult != null) {
+            Log.d(TAG, "Tầng 1 (Regex): Phân tích thành công cho $bankName")
+            return NotificationParseOutput(ParseResult.SUCCESS, regexResult, content, bankName)
+        }
+        Log.d(TAG, "Tầng 1 (Regex): Thất bại cho $bankName, chuyển sang Tầng 2 (ML Kit).")
 
         // === TẦNG 2: ML Kit Entity Extraction ===
         val mlKitResult = parseWithMlKit(bankName, content, timestamp)
@@ -374,7 +381,7 @@ class NotificationParser @Inject constructor(
                 val regex = patternStr.toRegex(RegexOption.IGNORE_CASE)
                 val match = regex.find(content)
                 if (match != null) {
-                    accountNumber = match.groupValues[1]
+                    accountNumber = match.groupValues[1].trim()
                     break
                 }
             } catch (e: Exception) {
@@ -528,16 +535,58 @@ class NotificationParser @Inject constructor(
 
             if (amount == 0.0) return null
 
-            // Xác định chiều giao dịch từ từ khóa trong nội dung
-            val isExpense = globalExpenseKeywords.any { content.contains(it, ignoreCase = true) }
-            isCredit = !isExpense
+            // Xác định chiều giao dịch (isCredit)
+            // 1. Kiểm tra ký tự ngay trước chuỗi số tiền hoặc phần đầu chuỗi số tiền để lấy dấu cộng/trừ
+            var signDetected: Boolean? = null
+            for (annotation in annotations) {
+                for (entity in annotation.entities) {
+                    if (entity is MoneyEntity) {
+                        val matchedText = annotation.annotatedText
+                        if (matchedText.startsWith("+")) {
+                            signDetected = true
+                        } else if (matchedText.startsWith("-")) {
+                            signDetected = false
+                        } else {
+                            val amountIndex = content.indexOf(matchedText)
+                            if (amountIndex > 0) {
+                                val prefix = content.substring(0, amountIndex).trim()
+                                if (prefix.endsWith("+")) {
+                                    signDetected = true
+                                } else if (prefix.endsWith("-")) {
+                                    signDetected = false
+                                }
+                            }
+                        }
+                        if (signDetected != null) break
+                    }
+                }
+                if (signDetected != null) break
+            }
+
+            if (signDetected != null) {
+                isCredit = signDetected
+            } else {
+                // 2. Fallback sang quét từ khóa chi tiêu nếu không tìm thấy dấu +/- rõ ràng
+                val lowerContent = content.lowercase()
+                val isExpense = globalExpenseKeywords.any { keyword ->
+                    val k = keyword.lowercase()
+                    lowerContent == k || lowerContent.startsWith("$k ") || lowerContent.endsWith(" $k") || lowerContent.contains(" $k ")
+                }
+                isCredit = !isExpense
+            }
+
+            var smartCounterparty = "Chưa rõ đối tác (Phân tích thông minh)"
+            val extractedName = extractNameHeuristics(content)
+            if (extractedName != null) {
+                smartCounterparty = extractedName
+            }
 
             ParsedData(
                 bankName = bankName,
                 accountNumber = "DEFAULT_ACC",
                 amount = amount,
                 isCredit = isCredit,
-                counterparty = "Chưa rõ đối tác (ML Kit)",
+                counterparty = smartCounterparty,
                 content = content.take(100),
                 timestamp = timestamp,
                 balance = null
@@ -563,6 +612,41 @@ class NotificationParser @Inject constructor(
                     continuation.resume(emptyList())
                 }
         }
+    }
+
+    /**
+     * Thuật toán phân tích Heuristic để tìm Tên Người Việt Nam trong nội dung tự do.
+     * Tìm các chuỗi Title Case (Nguyễn Thị Trân Hồng Trúc) hoặc ALL CAPS (TRAN HONG TRUC).
+     */
+    private fun extractNameHeuristics(content: String): String? {
+        try {
+            val titleCasePattern = Regex("(?:\\p{Lu}\\p{Ll}*\\s+){1,4}\\p{Lu}\\p{Ll}*")
+            val titleMatches = titleCasePattern.findAll(content).map { it.value.trim() }.toList()
+
+            for (match in titleMatches) {
+                val words = match.split(Regex("\\s+"))
+                if (words.size in 2..5) {
+                    if (!globalExcludeKeywords.any { match.equals(it, ignoreCase = true) }) {
+                        return match
+                    }
+                }
+            }
+
+            val allCapsPattern = Regex("(?:\\p{Lu}+\\s+){1,4}\\p{Lu}+")
+            val capsMatches = allCapsPattern.findAll(content).map { it.value.trim() }.toList()
+            
+            for (match in capsMatches) {
+                val words = match.split(Regex("\\s+"))
+                if (words.size in 2..5) {
+                    if (!globalExcludeKeywords.any { match.equals(it, ignoreCase = true) } && !match.contains("VND") && !match.contains(" SD ")) {
+                        return match
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Lỗi phân tích Heuristic tên người: ${e.message}", e)
+        }
+        return null
     }
 
     // ============================================================================

@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -31,6 +32,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.T2V.simple_expense_tracker.domain.model.Transaction
 import com.T2V.simple_expense_tracker.ui.theme.*
+import com.T2V.simple_expense_tracker.R
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -59,7 +61,7 @@ fun DashboardScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Background)
+            .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding()
             .verticalScroll(rememberScrollState())
             .padding(bottom = 100.dp) // Padding for scrolling past FAB if needed
@@ -76,7 +78,7 @@ fun DashboardScreen(
                 Icon(Icons.Default.Menu, "Menu", tint = MaterialTheme.colorScheme.onSurface)
             }
             Text(
-                text = "Simple Expense Tracker",
+                text = stringResource(id = R.string.app_name),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -96,7 +98,7 @@ fun DashboardScreen(
 
         // === Section 3: Giao dịch gần đây ===
         CollapsibleSection(
-            title = "Giao dịch gần đây",
+            title = stringResource(id = R.string.recent_transactions),
             modifier = Modifier.padding(horizontal = 20.dp),
             initiallyExpanded = true
         ) {
@@ -109,7 +111,7 @@ fun DashboardScreen(
                 }
                 if (state.recentTransactions.isEmpty()) {
                     Text(
-                        "Chưa có giao dịch nào diễn ra hôm nay.",
+                        stringResource(id = R.string.no_transactions_today),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(vertical = 16.dp)
                     )
@@ -191,7 +193,7 @@ private fun BalanceSection(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "Tổng số dư",
+            text = stringResource(id = R.string.total_balance),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -210,7 +212,7 @@ private fun BalanceSection(
                 .padding(horizontal = 12.dp, vertical = 8.dp)
         ) {
             Text(
-                text = "Xem tài khoản",
+                text = stringResource(id = R.string.view_accounts),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary
             )
@@ -241,6 +243,7 @@ private fun BalanceSection(
                             .clip(RoundedCornerShape(16.dp))
                             .background(SurfaceContainerLow)
                             .border(1.5.dp, color.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
+
                             .padding(16.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
@@ -313,7 +316,7 @@ private fun RecentTransactionItem(
             }
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = transaction.counterparty.takeIf { it.isNotBlank() } ?: "Không xác định",
+                    text = transaction.counterparty.takeIf { it.isNotBlank() } ?: stringResource(id = R.string.unknown_counterparty),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Medium,
@@ -396,7 +399,7 @@ private fun DetailListSection(
     }
 
     CollapsibleSection(
-        title = "Danh sách chi tiết",
+        title = stringResource(id = R.string.detail_list),
         modifier = Modifier.padding(horizontal = 20.dp),
         headerExtra = {
             IconButton(
@@ -405,7 +408,7 @@ private fun DetailListSection(
             ) {
                 Icon(
                     imageVector = Icons.Default.DateRange,
-                    contentDescription = "Chọn ngày",
+                    contentDescription = stringResource(id = R.string.select_date),
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
@@ -438,7 +441,7 @@ private fun DetailListSection(
                         modifier = Modifier
                             .clip(RoundedCornerShape(12.dp))
                             .clickable { onDateSelected(dateInMillis) }
-                            .background(if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color.Transparent)
+                            .background(if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Transparent)
                             .border(
                                 width = 1.dp,
                                 color = if (isSelected) MaterialTheme.colorScheme.primary else OutlineVariant,
@@ -468,7 +471,7 @@ private fun DetailListSection(
             // Danh sách giao dịch trong ngày được chọn
             if (state.dailyTransactions.isEmpty()) {
                 Text(
-                    "Không có giao dịch nào trong ngày này.",
+                    stringResource(id = R.string.no_transactions_day),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(vertical = 16.dp)
                 )
@@ -497,7 +500,7 @@ private fun StatsSection(
     var showYearPicker by remember { mutableStateOf(false) }
 
     CollapsibleSection(
-        title = "Thống kê chi tiêu",
+        title = stringResource(id = R.string.spending_stats),
         icon = Icons.Default.Info,
         modifier = Modifier.padding(horizontal = 20.dp),
         headerExtra = {
@@ -508,7 +511,7 @@ private fun StatsSection(
             ) {
                 Icon(
                     imageVector = Icons.Default.Settings,
-                    contentDescription = "Tùy chỉnh thống kê",
+                    contentDescription = stringResource(id = R.string.stats_customization),
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
@@ -525,8 +528,8 @@ private fun StatsSection(
                 ChartType.entries.forEach { type ->
                     val isSelected = state.chartType == type
                     val label = when (type) {
-                        ChartType.BAR -> "Biểu đồ trụ"
-                        ChartType.LINE -> "Biểu đồ đường"
+                        ChartType.BAR -> stringResource(id = R.string.chart_bar)
+                        ChartType.LINE -> stringResource(id = R.string.chart_line)
                     }
                     val icon = when (type) {
                         ChartType.BAR -> Icons.Default.List
@@ -550,14 +553,14 @@ private fun StatsSection(
                             Icon(
                                 imageVector = icon,
                                 contentDescription = null,
-                                tint = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                tint = if (isSelected) ChipSelectedText else MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = label,
                                 style = MaterialTheme.typography.labelMedium,
-                                color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                                color = if (isSelected) ChipSelectedText else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -597,7 +600,7 @@ private fun StatsSection(
                                 }
                             }
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Thu nhập", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(stringResource(id = R.string.income), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
@@ -631,7 +634,7 @@ private fun StatsSection(
                                 }
                             }
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Chi tiêu", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(stringResource(id = R.string.expense), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
@@ -645,7 +648,7 @@ private fun StatsSection(
             }
             // Dòng số dư ròng
             val netColor = if (state.statsNetBalance >= 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
-            val netLabel = if (state.statsNetBalance >= 0) "Dư" else "Thâm hụt"
+            val netLabel = if (state.statsNetBalance >= 0) stringResource(id = R.string.net_surplus) else stringResource(id = R.string.net_deficit)
             Surface(
                 shape = RoundedCornerShape(12.dp),
                 color = netColor.copy(alpha = 0.06f),
@@ -660,7 +663,7 @@ private fun StatsSection(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("$netLabel ròng:", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("$netLabel", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(
                         text = formatAmount(state.statsNetBalance),
                         style = MaterialTheme.typography.bodyMedium,
@@ -670,12 +673,12 @@ private fun StatsSection(
                 }
             }
 
-            // === Chart Box ===
+            // Chart Box
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
-                    .background(SurfaceContainerLow)
+                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
                     .padding(16.dp),
                 contentAlignment = Alignment.Center
             ) {
@@ -686,7 +689,7 @@ private fun StatsSection(
                         ChartType.LINE -> LineChart(data = chartData)
                     }
                 } else {
-                    Text("Chưa có dữ liệu thống kê", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(id = R.string.no_stats_data), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
 
@@ -705,7 +708,7 @@ private fun StatsSection(
                         .background(MaterialTheme.colorScheme.primary)
                 )
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("Thu nhập", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(id = R.string.income), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(modifier = Modifier.width(16.dp))
                 Box(
                     modifier = Modifier
@@ -714,7 +717,7 @@ private fun StatsSection(
                         .background(MaterialTheme.colorScheme.error)
                 )
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("Chi tiêu", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(id = R.string.expense), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
@@ -731,7 +734,7 @@ private fun StatsSection(
                     .padding(horizontal = 16.dp),
                 shape = RoundedCornerShape(28.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = SurfaceContainerHigh
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
                 )
             ) {
                 Column(modifier = Modifier.padding(24.dp)) {
@@ -742,7 +745,7 @@ private fun StatsSection(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Tùy chỉnh thống kê",
+                            text = stringResource(id = R.string.stats_customization),
                             style = MaterialTheme.typography.headlineMedium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -759,7 +762,7 @@ private fun StatsSection(
 
                     // 1. Chọn khoảng thời gian
                     Text(
-                        text = "KHOẢNG THỜI GIAN",
+                        text = stringResource(id = R.string.filter_time_period),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold
@@ -772,10 +775,10 @@ private fun StatsSection(
                         StatsTimePeriod.entries.forEach { period ->
                             val isSelected = state.statsTimePeriod == period
                             val label = when (period) {
-                                StatsTimePeriod.DAY -> "Ngày"
-                                StatsTimePeriod.WEEK -> "Tuần"
-                                StatsTimePeriod.MONTH -> "Tháng"
-                                StatsTimePeriod.YEAR -> "Năm"
+                                StatsTimePeriod.DAY -> stringResource(id = R.string.period_day)
+                                StatsTimePeriod.WEEK -> stringResource(id = R.string.period_week)
+                                StatsTimePeriod.MONTH -> stringResource(id = R.string.period_month)
+                                StatsTimePeriod.YEAR -> stringResource(id = R.string.period_year)
                             }
                             Surface(
                                 shape = RoundedCornerShape(12.dp),
@@ -787,7 +790,7 @@ private fun StatsSection(
                                 Text(
                                     text = label,
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = if (isSelected) ChipSelectedText else MaterialTheme.colorScheme.onSurfaceVariant,
                                     textAlign = TextAlign.Center,
                                     modifier = Modifier.padding(vertical = 10.dp)
                                 )
@@ -796,16 +799,16 @@ private fun StatsSection(
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
-                    HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
+                    HorizontalDivider(color = DividerMuted)
                     Spacer(modifier = Modifier.height(16.dp))
 
 
                     // 3. Chọn cụ thể các thời điểm cần thống kê
                     val listTitle = when (state.statsTimePeriod) {
-                        StatsTimePeriod.DAY -> "CÁC NGÀY CẦN THỐNG KÊ"
-                        StatsTimePeriod.WEEK -> "CÁC TUẦN CẦN THỐNG KÊ"
-                        StatsTimePeriod.MONTH -> "CÁC THÁNG CẦN THỐNG KÊ"
-                        StatsTimePeriod.YEAR -> "CÁC NĂM CẦN THỐNG KÊ"
+                        StatsTimePeriod.DAY -> stringResource(id = R.string.stats_days_list)
+                        StatsTimePeriod.WEEK -> stringResource(id = R.string.stats_weeks_list)
+                        StatsTimePeriod.MONTH -> stringResource(id = R.string.stats_months_list)
+                        StatsTimePeriod.YEAR -> stringResource(id = R.string.stats_years_list)
                     }
                     Text(
                         text = listTitle,
@@ -955,7 +958,7 @@ private fun StatsSection(
                                     modifier = Modifier.size(14.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Thêm", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                                Text(stringResource(id = R.string.add), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                             }
                         }
                     }
@@ -1058,7 +1061,7 @@ private fun StatsSection(
                 modifier = Modifier.padding(16.dp)
             ) {
                 Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Chọn Tháng & Năm", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                    Text(stringResource(id = R.string.select_month_year), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(modifier = Modifier.height(16.dp))
                     
                     Row(
@@ -1066,11 +1069,11 @@ private fun StatsSection(
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         IconButton(onClick = { tempYear-- }) {
-                            Icon(Icons.Default.ArrowBack, "Năm trước", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Icon(Icons.Default.ArrowBack, stringResource(id = R.string.prev_year), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Text(tempYear.toString(), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
                         IconButton(onClick = { tempYear++ }) {
-                            Icon(Icons.Default.ArrowForward, "Năm sau", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Icon(Icons.Default.ArrowForward, stringResource(id = R.string.next_year), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                     Spacer(modifier = Modifier.height(16.dp))
@@ -1123,7 +1126,7 @@ private fun StatsSection(
                 modifier = Modifier.padding(16.dp)
             ) {
                 Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Chọn Năm", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                    Text(stringResource(id = R.string.select_year), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(modifier = Modifier.height(16.dp))
                     
                     val chunkedYears = years.chunked(3)

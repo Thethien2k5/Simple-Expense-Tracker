@@ -15,6 +15,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 //import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -23,11 +24,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.T2V.simple_expense_tracker.domain.model.RawNotification
 import com.T2V.simple_expense_tracker.ui.theme.*
+import com.T2V.simple_expense_tracker.R
 import java.text.SimpleDateFormat
 import java.util.*
 
 /**
- * Panel "Danh sách thông báo" — hiển thị trong drawer bên phải.
+ * Panel stringResource(id = R.string.notification_list) — hiển thị trong drawer bên phải.
  * Hiển thị thông báo giao dịch ở dạng thô chưa qua xử lý.
  * Thiết kế theo ảnh d81a8864884b0915505a5.jpg.
  */
@@ -42,7 +44,7 @@ fun NotificationPanel(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Background)
+            .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding()
     ) {
         // Header
@@ -55,7 +57,7 @@ fun NotificationPanel(
         ) {
 
             Text(
-                text = "Danh sách thông báo",
+                text = stringResource(id = R.string.notification_list),
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.primary
             )
@@ -98,7 +100,7 @@ private fun NotificationCard(notification: RawNotification) {
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = SurfaceContainerHigh
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
         )
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -117,7 +119,7 @@ private fun NotificationCard(notification: RawNotification) {
                         modifier = Modifier
                             .size(40.dp)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(SurfaceVariant),
+                            .background(MaterialTheme.colorScheme.surfaceVariant),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -151,6 +153,26 @@ private fun NotificationCard(notification: RawNotification) {
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
+           Spacer(modifier = Modifier.height(4.dp))
+                    // Badge trạng thái
+                    val (badgeText, badgeColor) = if (notification.isProcessed) {
+                        stringResource(id = R.string.status_processed) to MaterialTheme.colorScheme.primary
+                    } else {
+                        stringResource(id = R.string.status_unparsed) to MaterialTheme.colorScheme.error
+                    }
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .border(1.dp, badgeColor, RoundedCornerShape(4.dp))
+                            .padding(horizontal = 8.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = badgeText,
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                            color = badgeColor,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
 
@@ -161,7 +183,7 @@ private fun NotificationCard(notification: RawNotification) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(12.dp))
-                    .background(SurfaceContainerLowest)
+                    .background(MaterialTheme.colorScheme.surfaceContainerLowest)
                     .padding(12.dp)
             ) {
                 Text(

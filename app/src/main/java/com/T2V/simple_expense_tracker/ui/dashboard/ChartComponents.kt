@@ -17,6 +17,7 @@ import androidx.compose.ui.text.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.T2V.simple_expense_tracker.ui.theme.ChartMarkerInner
 
 /**
  * Dữ liệu cho một cột trong biểu đồ trụ — lưu cả thu nhập và chi tiêu
@@ -213,7 +214,7 @@ fun LineChart(
                     center = Offset(stepX * i, valueToY(point.income))
                 )
                 drawCircle(
-                    color = Color.White,
+                    color = ChartMarkerInner,
                     radius = 2.5f,
                     center = Offset(stepX * i, valueToY(point.income))
                 )
@@ -251,7 +252,7 @@ fun LineChart(
                     center = Offset(stepX * i, valueToY(point.expense))
                 )
                 drawCircle(
-                    color = Color.White,
+                    color = ChartMarkerInner,
                     radius = 2.5f,
                     center = Offset(stepX * i, valueToY(point.expense))
                 )

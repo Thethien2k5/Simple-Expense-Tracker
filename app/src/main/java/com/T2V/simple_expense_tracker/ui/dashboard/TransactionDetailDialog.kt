@@ -97,7 +97,7 @@ fun TransactionDetailDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
-                        .background(SurfaceContainerLowest)
+                        .background(MaterialTheme.colorScheme.surfaceContainerLowest)
                         .padding(12.dp)
                 ) {
                     Text(
@@ -163,7 +163,7 @@ private fun DetailRow(
             )
         }
         HorizontalDivider(
-            color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.05f)
+            color = DividerMuted
         )
     }
 }

@@ -185,17 +185,6 @@ class NotificationActionViewModel @Inject constructor(
                     rawNotificationRepository.updateNotification(rawNotification.copy(isProcessed = true))
                 }
 
-                // 4. Cố gắng cập nhật parserConfig động dựa trên thông tin người dùng vừa nhập
-                if (rawNotification != null && content.isNotEmpty()) {
-                    notificationParser.tryLearnRegexFromManual(
-                        bankName = state.bankName,
-                        content = rawNotification.fullContent,
-                        amount = amount,
-                        isCredit = isCredit,
-                        accountNumber = accountNumber
-                    )
-                }
-
                 Log.d("NotificationActionVM", "Đã lưu giao dịch thủ công thành công!")
             } catch (e: Exception) {
                 Log.e("NotificationActionVM", "Lỗi saveManualParse: ${e.message}", e)

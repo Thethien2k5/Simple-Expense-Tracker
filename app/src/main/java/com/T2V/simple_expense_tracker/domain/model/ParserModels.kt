@@ -45,13 +45,11 @@ data class AmountPattern(
 
 /**
  * Kết quả trả về từ quá trình phân tích, bao gồm trạng thái:
- * - SUCCESS: Phân tích thành công hoàn toàn (Regex hoặc ML Kit).
- * - NEEDS_MANUAL: ML Kit không trích xuất đủ dữ liệu, cần người dùng xử lý thủ công.
- * - REJECTED: Thông báo không hợp lệ (quảng cáo, SMS, không phải biến động số dư).
+ * - SUCCESS: Phân tích thành công hoàn toàn bằng Regex.
+ * - REJECTED: Thông báo không hợp lệ (quảng cáo, SMS, không phải biến động số dư, hoặc không tách được số liệu).
  */
 enum class ParseResult {
     SUCCESS,
-    NEEDS_MANUAL,
     REJECTED
 }
 

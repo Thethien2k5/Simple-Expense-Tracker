@@ -2,16 +2,13 @@ package com.T2V.simple_expense_tracker.domain.parser
 
 import android.content.Context
 import android.util.Log
-import com.google.mlkit.nl.entityextraction.*
 import com.T2V.simple_expense_tracker.domain.config.ConfigManager
 import com.T2V.simple_expense_tracker.domain.model.*
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.suspendCancellableCoroutine
 import org.json.JSONArray
 import org.json.JSONObject
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.coroutines.resume
 
 /**
  * Bộ phân tích thông báo ngân hàng theo kiến trúc 3 tầng:
@@ -40,12 +37,9 @@ class NotificationParser @Inject constructor(
     private var globalExcludeKeywords = mutableListOf<String>()
     private var globalNamePattern: String = ""
 
-    // ML Kit Entity Extractor (khởi tạo lazy)
-    private var entityExtractor: EntityExtractor? = null
-
+    
     init {
         loadConfiguration()
-        initMlKit()
     }
 
     // ============================================================================
@@ -156,24 +150,6 @@ class NotificationParser @Inject constructor(
 
 
     // ============================================================================
-    // PHẦN 2: KHỞI TẠO ML KIT
-    // ============================================================================
-
-    private fun initMlKit() {
-        try {
-            val options = EntityExtractorOptions.Builder(EntityExtractorOptions.ENGLISH)
-                .build()
-            entityExtractor = EntityExtraction.getClient(options)
-            // Tải model xuống nếu chưa có
-            entityExtractor?.downloadModelIfNeeded()
-                ?.addOnSuccessListener { Log.d(TAG, "ML Kit Entity Extraction model đã sẵn sàng.") }
-                ?.addOnFailureListener { Log.w(TAG, "Không thể tải ML Kit model: ${it.message}") }
-        } catch (e: Exception) {
-            Log.e(TAG, "Lỗi khởi tạo ML Kit Entity Extraction: ${e.message}", e)
-        }
-    }
-
-    // ============================================================================
     // PHẦN 3: LỌC THÔNG BÁO (Blacklist + Whitelist)
     // ============================================================================
 
@@ -264,47 +240,33 @@ class NotificationParser @Inject constructor(
      * Phân tích thông báo theo kiến trúc 3 tầng.
      * @return NotificationParseOutput chứa kết quả và trạng thái phân tích.
      */
-    suspend fun parseMultiTier(bankName: String, content: String, timestamp: Long): NotificationParseOutput {
+        suspend fun parseMultiTier(bankName: String, content: String, timestamp: Long): NotificationParseOutput {
         if (content.isBlank()) {
             return NotificationParseOutput(ParseResult.REJECTED)
         }
 
-        // === TẦNG 1: Regex từ JSON ===
         var regexResult: ParsedData? = null
         val bankConfig = banks.find { it.name.equals(bankName, ignoreCase = true) }
         
-        // 1. Thử dùng parserConfig riêng của ngân hàng trước
         if (bankConfig?.parserConfig != null) {
             regexResult = parseWithRegex(bankName, content, timestamp, bankConfig.parserConfig)
         }
         
-        // 2. Nếu thất bại hoặc không có config riêng, thử dùng globalParserConfig làm phương án dự phòng
         if (regexResult == null && globalParserConfig != null) {
             regexResult = parseWithRegex(bankName, content, timestamp, globalParserConfig!!)
         }
 
         if (regexResult != null) {
-            Log.d(TAG, "Tầng 1 (Regex): Phân tích thành công cho $bankName")
+            Log.d(TAG, "Phân tích thành công bằng Regex cho $bankName")
             return NotificationParseOutput(ParseResult.SUCCESS, regexResult, content, bankName)
         }
-        Log.d(TAG, "Tầng 1 (Regex): Thất bại cho $bankName, chuyển sang Tầng 2 (ML Kit).")
 
-        // === TẦNG 2: ML Kit Entity Extraction ===
-        val mlKitResult = parseWithMlKit(bankName, content, timestamp)
-        if (mlKitResult != null) {
-            Log.d(TAG, "Tầng 2 (ML Kit): Phân tích thành công cho $bankName")
-            // Tự động cập nhật JSON cho lần sau (nếu có thể sinh Regex)
-            tryAutoUpdateConfig(bankName, content, mlKitResult)
-            return NotificationParseOutput(ParseResult.SUCCESS, mlKitResult, content, bankName)
-        }
-        Log.d(TAG, "Tầng 2 (ML Kit): Thất bại cho $bankName, yêu cầu xử lý thủ công.")
-
-        // === TẦNG 3: Yêu cầu xử lý thủ công ===
-        return NotificationParseOutput(ParseResult.NEEDS_MANUAL, null, content, bankName)
+        Log.d(TAG, "Phân tích thất bại cho $bankName. Từ chối.")
+        return NotificationParseOutput(ParseResult.REJECTED, null, content, bankName)
     }
 
     // ============================================================================
-    // PHẦN 5.1: TẦNG 1 - PHÂN TÍCH BẰNG REGEX
+    // PHẦN 5.1: PHÂN TÍCH BẰNG REGEX
     // ============================================================================
 
     /**
@@ -494,267 +456,6 @@ class NotificationParser @Inject constructor(
             timestamp = timestamp,
             balance = parsedBalance
         )
-    }
-
-    // ============================================================================
-    // PHẦN 5.2: TẦNG 2 - ML KIT ENTITY EXTRACTION
-    // ============================================================================
-
-    /**
-     * Phân tích thông báo bằng ML Kit Entity Extraction.
-     * Trích xuất thực thể TYPE_MONEY để lấy số tiền.
-     */
-    private suspend fun parseWithMlKit(bankName: String, content: String, timestamp: Long): ParsedData? {
-        val extractor = entityExtractor ?: return null
-
-        return try {
-            val annotations = extractEntities(extractor, content)
-            if (annotations.isEmpty()) return null
-
-            // Tìm thực thể tiền tệ (TYPE_MONEY)
-            var amount = 0.0
-            var isCredit = true // Mặc định nhận tiền
-
-            for (annotation in annotations) {
-                for (entity in annotation.entities) {
-                    if (entity is MoneyEntity) {
-                        val matchedText = annotation.annotatedText
-                        val parsedAmt = parseAmountFromText(matchedText)
-                        if (parsedAmt != null) {
-                            amount = parsedAmt
-                        } else {
-                            val intPart = entity.integerPart.toDouble()
-                            val fracPart = entity.fractionalPart.toDouble() / 100.0
-                            amount = intPart + fracPart
-                        }
-                        break
-                    }
-                }
-                if (amount > 0.0) break
-            }
-
-            if (amount == 0.0) return null
-
-            // Xác định chiều giao dịch (isCredit)
-            // 1. Kiểm tra ký tự ngay trước chuỗi số tiền hoặc phần đầu chuỗi số tiền để lấy dấu cộng/trừ
-            var signDetected: Boolean? = null
-            for (annotation in annotations) {
-                for (entity in annotation.entities) {
-                    if (entity is MoneyEntity) {
-                        val matchedText = annotation.annotatedText
-                        if (matchedText.startsWith("+")) {
-                            signDetected = true
-                        } else if (matchedText.startsWith("-")) {
-                            signDetected = false
-                        } else {
-                            val amountIndex = content.indexOf(matchedText)
-                            if (amountIndex > 0) {
-                                val prefix = content.substring(0, amountIndex).trim()
-                                if (prefix.endsWith("+")) {
-                                    signDetected = true
-                                } else if (prefix.endsWith("-")) {
-                                    signDetected = false
-                                }
-                            }
-                        }
-                        if (signDetected != null) break
-                    }
-                }
-                if (signDetected != null) break
-            }
-
-            if (signDetected != null) {
-                isCredit = signDetected
-            } else {
-                // 2. Fallback sang quét từ khóa chi tiêu nếu không tìm thấy dấu +/- rõ ràng
-                val lowerContent = content.lowercase()
-                val isExpense = globalExpenseKeywords.any { keyword ->
-                    val k = keyword.lowercase()
-                    lowerContent == k || lowerContent.startsWith("$k ") || lowerContent.endsWith(" $k") || lowerContent.contains(" $k ")
-                }
-                isCredit = !isExpense
-            }
-
-            var smartCounterparty = "Chưa rõ đối tác (Phân tích thông minh)"
-            val extractedName = extractNameHeuristics(content)
-            if (extractedName != null) {
-                smartCounterparty = extractedName
-            }
-
-            ParsedData(
-                bankName = bankName,
-                accountNumber = "DEFAULT_ACC",
-                amount = amount,
-                isCredit = isCredit,
-                counterparty = smartCounterparty,
-                content = content.take(100),
-                timestamp = timestamp,
-                balance = null
-            )
-        } catch (e: Exception) {
-            Log.e(TAG, "Lỗi ML Kit Entity Extraction: ${e.message}", e)
-            null
-        }
-    }
-
-    /**
-     * Helper: Trích xuất entities từ ML Kit bằng coroutine suspension.
-     */
-    private suspend fun extractEntities(extractor: EntityExtractor, text: String): List<EntityAnnotation> {
-        return suspendCancellableCoroutine { continuation ->
-            val params = EntityExtractionParams.Builder(text).build()
-            extractor.annotate(params)
-                .addOnSuccessListener { annotations ->
-                    continuation.resume(annotations)
-                }
-                .addOnFailureListener { e ->
-                    Log.e(TAG, "ML Kit annotate thất bại: ${e.message}", e)
-                    continuation.resume(emptyList())
-                }
-        }
-    }
-
-    /**
-     * Thuật toán phân tích Heuristic để tìm Tên Người Việt Nam trong nội dung tự do.
-     * Tìm các chuỗi Title Case (Nguyễn Thị Trân Hồng Trúc) hoặc ALL CAPS (TRAN HONG TRUC).
-     */
-    private fun extractNameHeuristics(content: String): String? {
-        try {
-            val titleCasePattern = Regex("(?:\\p{Lu}\\p{Ll}*\\s+){1,4}\\p{Lu}\\p{Ll}*")
-            val titleMatches = titleCasePattern.findAll(content).map { it.value.trim() }.toList()
-
-            for (match in titleMatches) {
-                val words = match.split(Regex("\\s+"))
-                if (words.size in 2..5) {
-                    if (!globalExcludeKeywords.any { match.equals(it, ignoreCase = true) }) {
-                        return match
-                    }
-                }
-            }
-
-            val allCapsPattern = Regex("(?:\\p{Lu}+\\s+){1,4}\\p{Lu}+")
-            val capsMatches = allCapsPattern.findAll(content).map { it.value.trim() }.toList()
-            
-            for (match in capsMatches) {
-                val words = match.split(Regex("\\s+"))
-                if (words.size in 2..5) {
-                    if (!globalExcludeKeywords.any { match.equals(it, ignoreCase = true) } && !match.contains("VND") && !match.contains(" SD ")) {
-                        return match
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Lỗi phân tích Heuristic tên người: ${e.message}", e)
-        }
-        return null
-    }
-
-    // ============================================================================
-    // PHẦN 5.3: TỰ ĐỘNG CẬP NHẬT JSON
-    // ============================================================================
-
-    /**
-     * Cố gắng tự động cập nhật cấu hình JSON khi ML Kit phân tích thành công.
-     * Giúp hệ thống "tự học" cho các lần sau.
-     */
-    private fun tryAutoUpdateConfig(bankName: String, content: String, parsedData: ParsedData) {
-        try {
-            // Tìm xem ngân hàng này đã có parserConfig chưa
-            val bankConfig = banks.find { it.name.equals(bankName, ignoreCase = true) }
-            if (bankConfig?.parserConfig != null) {
-                // Đã có config riêng nhưng Regex thất bại -> Không tự động ghi đè
-                Log.d(TAG, "Ngân hàng $bankName đã có parserConfig. Bỏ qua auto-update.")
-                return
-            }
-
-            // Sinh Regex đơn giản từ kết quả ML Kit
-            val amountStr = java.text.DecimalFormat("#,###").format(parsedData.amount)
-                .replace(",", ".")  // chuẩn VN format
-            val escapedAmount = Regex.escape(amountStr)
-            val sign = if (parsedData.isCredit) "\\+" else "\\-"
-
-            val newParserConfig = JSONObject().apply {
-                val amtPatterns = JSONArray()
-                amtPatterns.put(JSONObject().apply {
-                    put("pattern", "${sign}\\s*${escapedAmount}\\s*(?:VND|đ|d)")
-                    put("type", if (parsedData.isCredit) "fixed_income" else "fixed_expense")
-                    put("amountGroup", 1)
-                })
-                put("amountPatterns", amtPatterns)
-                put("accountPatterns", JSONArray())
-                put("contentPatterns", JSONArray())
-                put("balancePatterns", JSONArray())
-                put("transferPatterns", JSONArray())
-            }
-
-            val pkgKeyword = bankConfig?.packageKeywords?.firstOrNull() ?: bankName.lowercase()
-            val color = bankConfig?.color ?: "#757575"
-            configManager.addBankParserConfig(bankName, color, pkgKeyword, newParserConfig)
-            Log.d(TAG, "Đã tự động cập nhật parserConfig cho $bankName vào JSON.")
-        } catch (e: Exception) {
-            Log.e(TAG, "Lỗi tự động cập nhật JSON cho $bankName: ${e.message}", e)
-        }
-    }
-
-    /**
-     * Tự học Regex từ giao dịch nhập thủ công của người dùng.
-     */
-    fun tryLearnRegexFromManual(
-        bankName: String,
-        content: String,
-        amount: Double,
-        isCredit: Boolean,
-        accountNumber: String
-    ) {
-        val parsedData = ParsedData(
-            bankName = bankName,
-            accountNumber = accountNumber,
-            amount = amount,
-            isCredit = isCredit,
-            counterparty = "Nhập thủ công",
-            content = content,
-            timestamp = System.currentTimeMillis()
-        )
-        tryAutoUpdateConfig(bankName, content, parsedData)
-    }
-
-    private fun parseAmountFromText(text: String): Double? {
-        val cleanText = text.replace(Regex("[^0-9.,]"), "")
-        if (cleanText.isEmpty()) return null
-
-        return try {
-            if (cleanText.contains(".") && cleanText.contains(",")) {
-                val lastDotIdx = cleanText.lastIndexOf('.')
-                val lastCommaIdx = cleanText.lastIndexOf(',')
-                if (lastDotIdx > lastCommaIdx) {
-                    cleanText.replace(",", "").toDoubleOrNull()
-                } else {
-                    cleanText.replace(".", "").replace(",", ".").toDoubleOrNull()
-                }
-            } else if (cleanText.contains(",") && !cleanText.contains(".")) {
-                val parts = cleanText.split(",")
-                if (parts.size == 2 && parts[1].length == 3) {
-                    cleanText.replace(",", "").toDoubleOrNull()
-                } else if (parts.size > 2) {
-                    cleanText.replace(",", "").toDoubleOrNull()
-                } else {
-                    cleanText.replace(",", ".").toDoubleOrNull()
-                }
-            } else if (cleanText.contains(".") && !cleanText.contains(",")) {
-                val parts = cleanText.split(".")
-                if (parts.size == 2 && parts[1].length == 3) {
-                    cleanText.replace(".", "").toDoubleOrNull()
-                } else if (parts.size > 2) {
-                    cleanText.replace(".", "").toDoubleOrNull()
-                } else {
-                    cleanText.toDoubleOrNull()
-                }
-            } else {
-                cleanText.toDoubleOrNull()
-            }
-        } catch (e: Exception) {
-            null
-        }
     }
 
     // ============================================================================

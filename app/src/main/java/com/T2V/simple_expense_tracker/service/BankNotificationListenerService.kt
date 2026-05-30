@@ -189,10 +189,6 @@ class BankNotificationListenerService : NotificationListenerService() {
                     }
                 }
 
-                ParseResult.NEEDS_MANUAL -> {
-                    // Regex và ML Kit đều thất bại -> Chỉ log lại, người dùng có thể xem ở màn hình Raw Notifications
-                    Log.w(TAG, "⚠️ Không thể phân tích thông báo từ $bankName. Yêu cầu xử lý thủ công (đã tắt thông báo đẩy).")
-                }
 
                 ParseResult.REJECTED -> {
                     Log.d(TAG, "Thông báo bị từ chối (nội dung trống hoặc không hợp lệ).")

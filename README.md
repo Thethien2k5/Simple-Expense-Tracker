@@ -36,52 +36,76 @@ Dự án tuân theo mô hình **Clean Architecture** để đảm bảo tính ph
 
 ## 🔄 Sơ đồ Luồng (Flow Diagrams)
 
-### 1. Luồng Bắt & Phân tích Thông báo Ngân hàng
-Sơ đồ dưới đây mô tả quá trình từ khi điện thoại nhận được biến động số dư đến khi giao dịch được lưu vào cơ sở dữ liệu:
-
 ```mermaid
-sequenceDiagram
-    participant Bank App
-    participant OS as Hệ điều hành Android
-    participant Service as BankNotificationListenerService
-    participant ViewModel as NotificationActionViewModel
-    participant Parser as NotificationParser
-    participant DB as Room Database (Local)
-
-    Bank App->>OS: Bắn thông báo biến động số dư
-    OS->>Service: Bắt thông báo (Notification Access)
-    Service->>ViewModel: Gửi Intent Broadcast (raw text)
-    ViewModel->>Parser: Chuyển dữ liệu để bóc tách
-    
-    note over Parser: Chuẩn hóa NFC<br/>Phân tích Regex đa tầng
-    
-    alt Phân tích Thành công
-        Parser-->>ViewModel: Trả về đối tượng ParsedData
-        ViewModel->>DB: Lưu ngay vào bảng Transaction
-    else Phân tích Thất bại / Có bất thường
-        Parser-->>ViewModel: Trả về Null / Cảnh báo
-        ViewModel->>UI: Hiển thị Dialog Xác nhận / Nhập tay
-        UI->>DB: Lưu giao dịch sau khi người dùng xác nhận
+graph TD
+    subgraph UI_Layer ["UI Layer (Tầng Giao Diện)"]
+        DashboardScreen["DashboardScreen (Màn hình chính)"] --> DashboardViewModel["DashboardViewModel"]
+        LedgerScreen["LedgerScreen (Sổ thu chi)"] --> LedgerViewModel["LedgerViewModel"]
+    end
+    subgraph Domain_Layer ["Domain Layer (Tầng Nghiệp Vụ)"]
+        DashboardViewModel --> GetTransactionsUseCase["GetTransactionsUseCase (Lấy giao dịch)"]
+        DashboardViewModel --> GetBankAccountsUseCase["GetBankAccountsUseCase (Lấy TK)"]
+        GetTransactionsUseCase --> TransactionRepository["TransactionRepository (Interface)"]
+        GetBankAccountsUseCase --> BankAccountRepository["BankAccountRepository (Interface)"]
+        BankNotificationListenerService["BankNotificationListenerService (Lắng nghe TB)"] --> NotificationParser["NotificationParser (Phân tích TB)"]
+    end
+    subgraph Data_Layer ["Data Layer (Tầng Dữ Liệu)"]
+        TransactionRepository -.-> TransactionRepositoryImpl["TransactionRepositoryImpl (Thực thi)"]
+        BankAccountRepository -.-> BankAccountRepositoryImpl["BankAccountRepositoryImpl (Thực thi)"]
+        TransactionRepositoryImpl --> RoomDatabase["Room Database (CSDL Cục bộ)"]
+        BankAccountRepositoryImpl --> RoomDatabase
     end
 ```
 
-### 2. Luồng Hiển thị Dữ liệu & Đa Ngôn ngữ (UI Flow)
-Hệ thống sử dụng Reactive Programming (Flow) để cập nhật giao diện theo thời gian thực:
-
+## Data Flow - Sequence Diagram (Notification Processing)
 ```mermaid
-flowchart TD
-    DB[(Room Database)] -->|Flow/Coroutines| Repo[Repository]
-    Repo --> UseCase[Domain UseCases]
-    UseCase -->|StateFlow| VM[ViewModels]
-    
-    DS[(DataStore Prefs)] -->|Flow| Config[Theme & Language Config]
-    Config --> Main[MainActivity]
-    
-    Main -->|CompositionLocal| UI[Jetpack Compose UI]
-    VM -->|State| UI
-    
-    Note[Ghi chú: UI tự động Re-render 100%<br/>khi DB hoặc Language thay đổi]
-    UI -.-> Note
+sequenceDiagram
+    participant OS as "Android OS (HĐH)"
+    participant Service as "NotificationListener (Dịch vụ)"
+    participant Parser as "NotificationParser (Bộ phân tích)"
+    participant Repo as "Data Repositories (Kho dữ liệu)"
+    participant DB as "Room Database (CSDL)"
+
+    OS->>Service: onNotificationPosted() (Có thông báo mới)
+    Service->>Parser: isBankNotification() (Kiểm tra TB Ngân hàng)
+    alt Is Valid Bank Notification (TB Hợp lệ)
+        Service->>Repo: insertNotification() (Lưu TB thô)
+        Repo->>DB: Save Raw Notification (Ghi vào DB)
+        Service->>Parser: parseMultiTier() (Phân tích nội dung 3 tầng)
+        Parser-->>Service: ParsedData (Số tiền, Tài khoản, Số dư)
+        Service->>Service: Mutex.withLock() (Khóa luồng đồng bộ)
+        Service->>Repo: getBankAccount() (Lấy thông tin Tài khoản)
+        Repo-->>Service: BankAccount info (Trả về TK)
+        Service->>Repo: updateBankAccount() (Cập nhật số dư mới)
+        Service->>Repo: insertTransaction() (Lưu giao dịch chi tiêu)
+        Repo->>DB: Save Transaction (Ghi vào DB)
+    end
+```
+
+## Entity Relationship Diagram (ERD)
+```mermaid
+erDiagram
+    BankAccount ||--o{ Transaction : "has (có)"
+    RawNotification ||--o| Transaction : "creates (tạo ra)"
+    BankAccount {
+        Long id PK
+        String bankName "Tên ngân hàng"
+        String accountNumber "Số tài khoản"
+        Double balance "Số dư hiện tại"
+    }
+    RawNotification {
+        Long id PK
+        String bankName "Tên ngân hàng"
+        String fullContent "Nội dung gốc đầy đủ"
+        Boolean isProcessed "Trạng thái đã xử lý"
+    }
+    Transaction {
+        Long id PK
+        Long bankAccountId FK
+        Long rawNotificationId FK
+        Double amount "Số tiền giao dịch"
+        String counterparty "Đối tác/Người gửi nhận"
+    }
 ```
 
 ## 🚀 Cài đặt & Chạy ứng dụng

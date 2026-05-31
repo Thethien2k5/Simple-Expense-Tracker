@@ -18,7 +18,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
-import kotlin.math.abs
 
 /**
  * Dịch vụ chạy ngầm bắt các thông báo biến động số dư ngân hàng
@@ -55,8 +54,6 @@ class BankNotificationListenerService : NotificationListenerService() {
 
     companion object {
         private const val TAG = "BankNotificationService"
-        // Ngưỡng sai lệch số dư cho phép (VND) - do làm tròn
-        private const val BALANCE_TOLERANCE = 1.0
     }
 
     override fun onBind(intent: Intent?): IBinder? {
@@ -171,11 +168,6 @@ class BankNotificationListenerService : NotificationListenerService() {
                             // (tránh trường hợp đoán sai số dư).
                             var finalBalance = freshBankAccount.balance
                             if (parsedData.balance != null) {
-                                val expectedBalance = freshBankAccount.balance + txAmount
-                                val difference = abs(parsedData.balance - expectedBalance)
-                                if (difference > BALANCE_TOLERANCE) {
-                                    Log.w(TAG, "⚠️ Phát hiện sai lệch số dư. Dự kiến=$expectedBalance, Thông báo=${parsedData.balance}. Ép cập nhật theo thông báo.")
-                                }
                                 finalBalance = parsedData.balance
                             }
 

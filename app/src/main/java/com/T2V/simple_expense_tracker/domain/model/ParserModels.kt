@@ -19,6 +19,7 @@ data class ParsedData(
  */
 data class BankConfig(
     val name: String,
+    val shortName: String? = null,
     val color: String,
     val packageKeywords: List<String>,
     val titleKeywords: List<String>,

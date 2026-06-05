@@ -54,11 +54,27 @@
     "đăng ký",
     "dang ky",
     "nâng cấp",
-    "nang cap"
+    "nang cap",
+    "săn mã",
+    "san ma",
+    "deal",
+    "kẻo lỡ",
+    "keo lo",
+    "lãi suất",
+    "lai suat",
+    "chứng chỉ tiền gửi",
+    "chung chi tien gui",
+    "gửi tiết kiệm",
+    "gui tiet kiem",
+    "vay vốn",
+    "vay von",
+    "tiếp sức",
+    "tiep suc"
   ],
   "banks": [
     {
       "name": "Vietcombank",
+      "shortName": "vietcombank",
       "color": "#4CAF50",
       "packageKeywords": [
         "vietcombank"
@@ -70,7 +86,7 @@
       "parserConfig": {
         "amountPatterns": [
           {
-            "pattern": "([\\+\\-])\\s*([0-9.,]+)\\s*(?:VND|VNĐ|đ|d|vnd)?",
+            "pattern": "([\\+\\-])\\s*([0-9.,]+)(?!\\s*%)\\s*(?:VND|VNĐ|đ|d|vnd)?",
             "type": "sign_amount",
             "signGroup": 1,
             "amountGroup": 2
@@ -93,6 +109,7 @@
     },
     {
       "name": "Techcombank",
+      "shortName": "techcombank",
       "color": "#E53935",
       "packageKeywords": [
         "tcb",
@@ -127,6 +144,7 @@
     },
     {
       "name": "MB Bank",
+      "shortName": "mbbank",
       "color": "#1E88E5",
       "packageKeywords": [
         "mbmobile",
@@ -161,6 +179,7 @@
     },
     {
       "name": "TPBank",
+      "shortName": "tpbank",
       "color": "#8E24AA",
       "packageKeywords": [
         "tpbank"
@@ -194,6 +213,7 @@
     },
     {
       "name": "BIDV",
+      "shortName": "bidv",
       "color": "#0D47A1",
       "packageKeywords": [
         "bidv"
@@ -204,13 +224,13 @@
       "parserConfig": {
         "amountPatterns": [
           {
-            "pattern": "(?:GD|giao dịch|Số tiền GD)\\s*[:\\-]?\\s*([\\+\\-])\\s*([0-9.,]+)\\s*(?:VND|đ|d|vnd)?",
+            "pattern": "(?:GD|giao dịch|Số tiền GD)\\s*[:\\-]?\\s*([\\+\\-])\\s*([0-9.,]+)(?!\\s*%)\\s*(?:VND|đ|d|vnd)?",
             "type": "sign_amount",
             "signGroup": 1,
             "amountGroup": 2
           },
           {
-            "pattern": "([\\+\\-])\\s*([0-9.,]+)\\s*(?:VND|đ|d|vnd)?",
+            "pattern": "([\\+\\-])\\s*([0-9.,]+)(?!\\s*%)\\s*(?:VND|đ|d|vnd)?",
             "type": "sign_amount",
             "signGroup": 1,
             "amountGroup": 2
@@ -232,6 +252,7 @@
     },
     {
       "name": "VPBank",
+      "shortName": "vpbank",
       "color": "#2E7D32",
       "packageKeywords": [
         "vpb",
@@ -266,6 +287,7 @@
     },
     {
       "name": "Cake by VPBank",
+      "shortName": "cake",
       "color": "#EC407A",
       "packageKeywords": [
         "cake"
@@ -302,6 +324,7 @@
     },
     {
       "name": "Sacombank",
+      "shortName": "sacombank",
       "color": "#0288D1",
       "packageKeywords": [
         "sacombank"
@@ -313,6 +336,7 @@
     },
     {
       "name": "ACB",
+      "shortName": "acb",
       "color": "#0091EA",
       "packageKeywords": [
         "acb"
@@ -324,6 +348,7 @@
     },
     {
       "name": "MSB",
+      "shortName": "msb",
       "color": "#7E57C2",
       "packageKeywords": [
         "msb"
@@ -335,6 +360,7 @@
     },
     {
       "name": "TNEX",
+      "shortName": "msb",
       "color": "#00CBD6",
       "packageKeywords": [
         "tnex",
@@ -347,13 +373,13 @@
       "parserConfig": {
         "amountPatterns": [
           {
-            "pattern": "\\(([\\+\\-])\\)\\s*([0-9.,]+)",
+            "pattern": "\\(([\\+\\-])\\)\\s*([0-9.,]+)(?!\\s*%)",
             "type": "sign_amount",
             "signGroup": 1,
             "amountGroup": 2
           },
           {
-            "pattern": "([\\+\\-])\\s*([0-9.,]+)\\s*(?:VND|VNĐ|đ|d|vnd)?",
+            "pattern": "([\\+\\-])\\s*([0-9.,]+)(?!\\s*%)\\s*(?:VND|VNĐ|đ|d|vnd)?",
             "type": "sign_amount",
             "signGroup": 1,
             "amountGroup": 2
@@ -377,6 +403,7 @@
     },
     {
       "name": "Momo",
+      "shortName": "momo",
       "color": "#E11880",
       "packageKeywords": [
         "momo",
@@ -501,5 +528,5 @@
       "mặt"
     ]
   },
-  "version": 18
+  "version": 19
 }

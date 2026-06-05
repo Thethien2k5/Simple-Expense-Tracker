@@ -75,11 +75,12 @@ class NotificationParser @Inject constructor(
                 for (i in 0 until banksArray.length()) {
                     val bankObj = banksArray.getJSONObject(i)
                     val name = bankObj.optString("name", "")
+                    val shortName = bankObj.optString("shortName", "").takeIf { it.isNotEmpty() }
                     val color = bankObj.optString("color", "#757575")
                     val pkgKeywords = jsonArrayToStringList(bankObj.optJSONArray("packageKeywords"))
                     val titleKeywords = jsonArrayToStringList(bankObj.optJSONArray("titleKeywords"))
                     val parserConfig = parseBankParserConfig(bankObj.optJSONObject("parserConfig"))
-                    banks.add(BankConfig(name, color, pkgKeywords, titleKeywords, parserConfig))
+                    banks.add(BankConfig(name, shortName, color, pkgKeywords, titleKeywords, parserConfig))
                 }
             }
 
@@ -230,6 +231,13 @@ class NotificationParser @Inject constructor(
      */
     fun getBankColor(bankName: String): String {
         return banks.find { it.name.equals(bankName, ignoreCase = true) }?.color ?: "#757575"
+    }
+
+    /**
+     * Lấy mã viết tắt (shortName) của ngân hàng từ cấu hình.
+     */
+    fun getBankShortName(bankName: String): String? {
+        return banks.find { it.name.equals(bankName, ignoreCase = true) }?.shortName
     }
 
     // ============================================================================

@@ -1,9 +1,22 @@
 package com.T2V.simple_expense_tracker
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import androidx.fragment.app.FragmentActivity
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricPrompt
+import androidx.core.content.ContextCompat
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.foundation.layout.fillMaxWidth
  import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -40,11 +53,61 @@ import com.T2V.simple_expense_tracker.util.LocaleHelper
 import  com.T2V.simple_expense_tracker.domain.repository.LanguageRepository
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : androidx.fragment.app.FragmentActivity() {
     @Inject
     lateinit var themeRepository: ThemeRepository
     @Inject
     lateinit var languageRepository: LanguageRepository
+
+    private val isDeviceUnlocked = mutableStateOf(false)
+
+    private fun showBiometricPrompt() {
+        val biometricManager = BiometricManager.from(this)
+        val authenticators = BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL
+        
+        val canAuthenticate = biometricManager.canAuthenticate(authenticators)
+        if (canAuthenticate != BiometricManager.BIOMETRIC_SUCCESS) {
+            isDeviceUnlocked.value = true
+            return
+        }
+
+        val executor = ContextCompat.getMainExecutor(this)
+        val callback = object : BiometricPrompt.AuthenticationCallback() {
+            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                super.onAuthenticationSucceeded(result)
+                isDeviceUnlocked.value = true
+            }
+
+            override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                super.onAuthenticationError(errorCode, errString)
+            }
+
+            override fun onAuthenticationFailed() {
+                super.onAuthenticationFailed()
+            }
+        }
+
+        val biometricPrompt = BiometricPrompt(this, executor, callback)
+        val promptInfo = BiometricPrompt.PromptInfo.Builder()
+            .setTitle("Xác thực bảo mật")
+            .setSubtitle("Sử dụng vân tay hoặc mật khẩu để mở khóa ứng dụng")
+            .setAllowedAuthenticators(authenticators)
+            .build()
+
+        biometricPrompt.authenticate(promptInfo)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (!isDeviceUnlocked.value) {
+            showBiometricPrompt()
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        isDeviceUnlocked.value = false
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,7 +127,11 @@ class MainActivity : ComponentActivity() {
 
             SimpleExpenseTrackerTheme(theme = theme) {
                 CompositionLocalProvider(LocalAppStrings provides appStrings) {
-                    MainApp()
+                    if (isDeviceUnlocked.value) {
+                        MainApp()
+                    } else {
+                        LockScreen(theme = theme, onUnlockClick = { showBiometricPrompt() })
+                    }
                 }
             }
         }
@@ -201,6 +268,96 @@ fun MainApp() {
                         viewModel = hiltViewModel(),
                         onMenuClick = { scope.launch { leftDrawerState.open() } },
                         onNotificationClick = { scope.launch { rightDrawerState.open() } }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun LockScreen(
+    theme: AppTheme,
+    onUnlockClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(24.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(96.dp)
+                    .clip(CircleShape)
+                    .background(
+                        Brush.linearGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f)
+                            )
+                        )
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Lock,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(48.dp)
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            Text(
+                text = "Simple Expense Tracker",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            Text(
+                text = "Ứng dụng đang được khóa để bảo mật",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+            
+            Spacer(modifier = Modifier.height(48.dp))
+            
+            Button(
+                onClick = onUnlockClick,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                ),
+                shape = RoundedCornerShape(24.dp),
+                modifier = Modifier
+                    .fillMaxWidth(0.7f)
+                    .height(48.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Fingerprint,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text = "MỞ KHÓA",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimary
                     )
                 }
             }

@@ -1,6 +1,11 @@
 package com.T2V.simple_expense_tracker.ui.dashboard
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.*
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -18,12 +23,16 @@ import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.T2V.simple_expense_tracker.ui.theme.LocalAppStrings
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -36,6 +45,8 @@ import com.T2V.simple_expense_tracker.ui.theme.*
 import com.T2V.simple_expense_tracker.R
 import java.text.SimpleDateFormat
 import java.util.*
+import coil.compose.SubcomposeAsyncImage
+import com.T2V.simple_expense_tracker.domain.model.BankAccount
 
 /**
  * Màn hình chính (Dashboard) — hiển thị toàn bộ 5 sections.
@@ -92,7 +103,15 @@ fun DashboardScreen(
 
         // === Section 1: Tổng số dư ===
         BalanceSection(
-            state = state
+            state = state,
+            onQrClick = { accountId ->
+                val current = state.selectedQrBankAccountId
+                viewModel.selectQrBankAccount(if (current == accountId) null else accountId)
+            },
+            onToggleTotalBalanceVisibility = { viewModel.toggleTotalBalanceVisibility() },
+            onToggleBankAccountVisibility = { accountId -> viewModel.toggleBankAccountVisibility(accountId) },
+            onToggleAllBankAccountsVisibility = { visible -> viewModel.toggleAllBankAccountsVisibility(visible) },
+            getBankShortName = { viewModel.getBankShortName(it) }
         )
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -184,8 +203,72 @@ private fun BankLogoBadge(bankName: String, color: Color) {
 }
 
 @Composable
+private fun StyledHiddenBalance(
+    themeColor: Color,
+    dotSize: androidx.compose.ui.unit.Dp = 10.dp,
+    spacing: androidx.compose.ui.unit.Dp = 6.dp,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(spacing),
+        modifier = modifier
+    ) {
+        Icon(
+            imageVector = Icons.Default.Lock,
+            contentDescription = null,
+            tint = themeColor.copy(alpha = 0.8f),
+            modifier = Modifier.size(dotSize * 1.5f)
+        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(spacing)
+        ) {
+            repeat(5) { index ->
+                val infiniteTransition = rememberInfiniteTransition(label = "dot_shimmer_$index")
+                val scale by infiniteTransition.animateFloat(
+                    initialValue = 0.7f,
+                    targetValue = 1.3f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(durationMillis = 800, delayMillis = index * 100, easing = LinearEasing),
+                        repeatMode = RepeatMode.Reverse
+                    ),
+                    label = "dot_scale_$index"
+                )
+                val alpha by infiniteTransition.animateFloat(
+                    initialValue = 0.3f,
+                    targetValue = 1.0f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(durationMillis = 800, delayMillis = index * 100, easing = LinearEasing),
+                        repeatMode = RepeatMode.Reverse
+                    ),
+                    label = "dot_alpha_$index"
+                )
+                
+                Box(
+                    modifier = Modifier
+                        .size(dotSize)
+                        .graphicsLayer(scaleX = scale, scaleY = scale, alpha = alpha)
+                        .background(
+                            brush = Brush.radialGradient(
+                                colors = listOf(themeColor, themeColor.copy(alpha = 0.2f))
+                            ),
+                            shape = CircleShape
+                        )
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun BalanceSection(
-    state: DashboardUiState
+    state: DashboardUiState,
+    onQrClick: (Long) -> Unit,
+    onToggleTotalBalanceVisibility: () -> Unit,
+    onToggleBankAccountVisibility: (Long) -> Unit,
+    onToggleAllBankAccountsVisibility: (Boolean) -> Unit,
+    getBankShortName: (String) -> String
 ) {
     var showAccounts by remember { mutableStateOf(false) }
 
@@ -193,36 +276,80 @@ private fun BalanceSection(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = LocalAppStrings.current.totalBalance,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            text = formatAmount(state.totalBalance).replace("+", "").replace("-", ""), // Display absolute total balance
-            style = MaterialTheme.typography.displayLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(vertical = 8.dp)
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = LocalAppStrings.current.totalBalance,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            IconButton(
+                onClick = onToggleTotalBalanceVisibility,
+                modifier = Modifier.size(24.dp)
+            ) {
+                Icon(
+                    imageVector = if (state.isTotalBalanceVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                    contentDescription = if (state.isTotalBalanceVisible) "Ẩn số dư" else "Hiện số dư",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+        if (state.isTotalBalanceVisible) {
+            Text(
+                text = formatAmount(state.totalBalance).replace("+", "").replace("-", ""), // Display absolute total balance
+                style = MaterialTheme.typography.displayLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+        } else {
+            StyledHiddenBalance(
+                themeColor = MaterialTheme.colorScheme.primary,
+                dotSize = 14.dp,
+                spacing = 8.dp,
+                modifier = Modifier.padding(vertical = 12.dp)
+            )
+        }
         
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .clip(RoundedCornerShape(16.dp))
-                .clickable { showAccounts = !showAccounts }
-                .padding(horizontal = 12.dp, vertical = 8.dp)
+            horizontalArrangement = Arrangement.Center
         ) {
-            Text(
-                text = LocalAppStrings.current.viewAccounts,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Icon(
-                imageVector = Icons.Default.ArrowDropDown,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.rotate(if (showAccounts) 180f else 0f)
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(16.dp))
+                    .clickable { showAccounts = !showAccounts }
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
+            ) {
+                Text(
+                    text = LocalAppStrings.current.viewAccounts,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Icon(
+                    imageVector = Icons.Default.ArrowDropDown,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.rotate(if (showAccounts) 180f else 0f)
+                )
+            }
+            AnimatedVisibility(visible = showAccounts) {
+                val allShown = state.bankAccounts.all { state.visibleBankAccountIds.contains(it.id) }
+                IconButton(
+                    onClick = { onToggleAllBankAccountsVisibility(!allShown) },
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        imageVector = if (allShown) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                        contentDescription = "Ẩn/Hiện toàn bộ tài khoản",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
         }
  
         AnimatedVisibility(visible = showAccounts) {
@@ -237,43 +364,100 @@ private fun BalanceSection(
                         .getOrDefault(MaterialTheme.colorScheme.primary)
                     val balance = state.getAccountBalance(account.id)
                     val formattedBalance = formatAmount(balance).replace("+", "")
+                    val isQrSelected = state.selectedQrBankAccountId == account.id
+                    val isAccountVisible = state.visibleBankAccountIds.contains(account.id)
                     
-                    Row(
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(16.dp))
                             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                             .border(1.5.dp, color.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
-
+                            .animateContentSize()
                             .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Row(
-                            verticalAlignment = Alignment.CenterVertically, 
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            BankLogoBadge(account.bankName, color)
-                            Column {
-                                Text(
-                                    text = account.bankName,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                                Text(
-                                    text = account.accountNumber,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically, 
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                BankLogoBadge(account.bankName, color)
+                                Column {
+                                    Text(
+                                        text = account.bankName,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        fontWeight = FontWeight.SemiBold,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Text(
+                                        text = account.accountNumber,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                if (isAccountVisible) {
+                                    Text(
+                                        text = formattedBalance,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = color,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                } else {
+                                    StyledHiddenBalance(
+                                        themeColor = color,
+                                        dotSize = 6.dp,
+                                        spacing = 3.dp
+                                    )
+                                }
+                                Box(
+                                    modifier = Modifier
+                                        .clip(CircleShape)
+                                        .clickable { onToggleBankAccountVisibility(account.id) }
+                                        .padding(6.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = if (isAccountVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                        contentDescription = "Ẩn/Hiện số dư tài khoản",
+                                        tint = if (isAccountVisible) color else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                                Box(
+                                    modifier = Modifier
+                                        .clip(CircleShape)
+                                        .clickable { onQrClick(account.id) }
+                                        .padding(6.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.QrCode,
+                                        contentDescription = "Mã QR chuyển khoản",
+                                        tint = if (isQrSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
                             }
                         }
-                        Text(
-                            text = formattedBalance,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = color,
-                            fontWeight = FontWeight.Bold
-                        )
+                        
+                        AnimatedVisibility(visible = isQrSelected) {
+                            QrCodeBox(
+                                account = account,
+                                themeColor = color,
+                                getBankShortName = getBankShortName
+                            )
+                        }
                     }
                 }
             }
@@ -1168,4 +1352,85 @@ private fun isSameDay(time1: Long, time2: Long): Boolean {
     val cal2 = Calendar.getInstance().apply { timeInMillis = time2 }
     return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
            cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR)
+}
+
+@Composable
+private fun QrCodeBox(
+    account: BankAccount,
+    themeColor: Color,
+    getBankShortName: (String) -> String,
+    modifier: Modifier = Modifier
+) {
+    val bankShort = getBankShortName(account.bankName)
+    val qrUrl = "https://img.vietqr.io/image/${bankShort}-${account.accountNumber}-compact.png"
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(220.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color.White)
+                    .padding(8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                SubcomposeAsyncImage(
+                    model = qrUrl,
+                    contentDescription = "VietQR",
+                    loading = {
+                        CircularProgressIndicator(
+                            color = themeColor,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    },
+                    error = {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = "Error",
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                            Text(
+                                text = "Lỗi tải mã QR",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    text = account.bankName.uppercase(),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = themeColor,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = account.accountNumber,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
+    }
 }

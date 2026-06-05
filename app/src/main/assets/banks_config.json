@@ -3,7 +3,17 @@
     "com.google.android.apps.messaging",
     "com.android.mms",
     "com.samsung.android.messaging",
-    "com.android.messaging"
+    "com.android.messaging",
+    "com.google.android.gm",
+    "com.microsoft.office.outlook",
+    "com.android.email",
+    "com.yahoo.mobile.client.android.mail",
+    "com.samsung.android.email.provider",
+    "com.samsung.android.email",
+    "ch.protonmail.android",
+    "com.k9mail",
+    "ru.yandex.mail",
+    "com.my.mail"
   ],
   "promotionalKeywords": [
     "voucher",
@@ -44,11 +54,27 @@
     "đăng ký",
     "dang ky",
     "nâng cấp",
-    "nang cap"
+    "nang cap",
+    "săn mã",
+    "san ma",
+    "deal",
+    "kẻo lỡ",
+    "keo lo",
+    "lãi suất",
+    "lai suat",
+    "chứng chỉ tiền gửi",
+    "chung chi tien gui",
+    "gửi tiết kiệm",
+    "gui tiet kiem",
+    "vay vốn",
+    "vay von",
+    "tiếp sức",
+    "tiep suc"
   ],
   "banks": [
     {
       "name": "Vietcombank",
+      "shortName": "vietcombank",
       "color": "#4CAF50",
       "packageKeywords": [
         "vietcombank"
@@ -60,7 +86,7 @@
       "parserConfig": {
         "amountPatterns": [
           {
-            "pattern": "([\\+\\-])\\s*([0-9.,]+)\\s*(?:VND|VNĐ|đ|d|vnd)?",
+            "pattern": "([\\+\\-])\\s*([0-9.,]+)(?!\\s*%)\\s*(?:VND|VNĐ|đ|d|vnd)?",
             "type": "sign_amount",
             "signGroup": 1,
             "amountGroup": 2
@@ -83,6 +109,7 @@
     },
     {
       "name": "Techcombank",
+      "shortName": "techcombank",
       "color": "#E53935",
       "packageKeywords": [
         "tcb",
@@ -117,6 +144,7 @@
     },
     {
       "name": "MB Bank",
+      "shortName": "mbbank",
       "color": "#1E88E5",
       "packageKeywords": [
         "mbmobile",
@@ -151,6 +179,7 @@
     },
     {
       "name": "TPBank",
+      "shortName": "tpbank",
       "color": "#8E24AA",
       "packageKeywords": [
         "tpbank"
@@ -184,6 +213,7 @@
     },
     {
       "name": "BIDV",
+      "shortName": "bidv",
       "color": "#0D47A1",
       "packageKeywords": [
         "bidv"
@@ -194,20 +224,26 @@
       "parserConfig": {
         "amountPatterns": [
           {
-            "pattern": "([\\+\\-])\\s*([0-9.,]+)\\s*(?:VND|đ|d|vnd)",
+            "pattern": "(?:GD|giao dịch|Số tiền GD)\\s*[:\\-]?\\s*([\\+\\-])\\s*([0-9.,]+)(?!\\s*%)\\s*(?:VND|đ|d|vnd)?",
+            "type": "sign_amount",
+            "signGroup": 1,
+            "amountGroup": 2
+          },
+          {
+            "pattern": "([\\+\\-])\\s*([0-9.,]+)(?!\\s*%)\\s*(?:VND|đ|d|vnd)?",
             "type": "sign_amount",
             "signGroup": 1,
             "amountGroup": 2
           }
         ],
         "accountPatterns": [
-          "(?:TK|tai khoan)\\s*:?\\s*([0-9xX]+)"
+          "(?:TK|tài khoản(?: thanh toán)?|tai khoan(?: thanh toan)?)\\s*[:\\-]?\\s*([0-9xX]+)"
         ],
         "contentPatterns": [
-          "(?:ND|noi dung)\\s*:?\\s*(.+?)(?:\\.|$)"
+          "(?:\\bND\\b|nội dung(?: giao dịch)?|noi dung(?: giao dich)?)\\s*[:\\-]?\\s*(.+?)(?:\\s*(?:Mã giao dịch|Ma gd)|\\.|\\z)"
         ],
         "balancePatterns": [
-          "(?:SD|so du)\\s*:?\\s*([0-9.,]+)"
+          "(?:SD|số dư(?: cuối)?|so du(?: cuoi)?)\\s*[:\\-]?\\s*([0-9.,]+)"
         ],
         "transferPatterns": [
           "(?:tai|tại|tu|từ)\\s+(.+?)(?:\\.\\s*ND|\\s+ND|$)"
@@ -216,6 +252,7 @@
     },
     {
       "name": "VPBank",
+      "shortName": "vpbank",
       "color": "#2E7D32",
       "packageKeywords": [
         "vpb",
@@ -250,6 +287,7 @@
     },
     {
       "name": "Cake by VPBank",
+      "shortName": "cake",
       "color": "#EC407A",
       "packageKeywords": [
         "cake"
@@ -257,10 +295,36 @@
       "titleKeywords": [
         "cake"
       ],
-      "parserConfig": null
+      "parserConfig": {
+        "amountPatterns": [
+          {
+            "pattern": "vừa tăng\\s*([0-9.,]+)\\s*(?:đ|d|vnd|VNĐ)?",
+            "type": "fixed_income",
+            "amountGroup": 1
+          },
+          {
+            "pattern": "vừa giảm\\s*([0-9.,]+)\\s*(?:đ|d|vnd|VNĐ)?",
+            "type": "fixed_expense",
+            "amountGroup": 1
+          }
+        ],
+        "accountPatterns": [
+          "(?:TK|tài khoản|tai khoan)\\s*[:\\-]?\\s*([0-9xX]+)"
+        ],
+        "contentPatterns": [
+          "(?:\\bND\\b|nội dung|noi dung)\\s*[:\\-]?\\s*(.+?)(?:\\s*(?:Số dư hiện tại|SD|so du|số dư)|\\.|\\z)"
+        ],
+        "balancePatterns": [
+          "(?:Số dư hiện tại|số dư cuối|SD|so du)\\s*(?:của tài khoản thanh toán)?\\s*(?:là|:)?\\s*([0-9.,]+)"
+        ],
+        "transferPatterns": [
+          "([A-Za-z\\s]+?)\\s+chuyen\\s+tien"
+        ]
+      }
     },
     {
       "name": "Sacombank",
+      "shortName": "sacombank",
       "color": "#0288D1",
       "packageKeywords": [
         "sacombank"
@@ -272,6 +336,7 @@
     },
     {
       "name": "ACB",
+      "shortName": "acb",
       "color": "#0091EA",
       "packageKeywords": [
         "acb"
@@ -283,6 +348,7 @@
     },
     {
       "name": "MSB",
+      "shortName": "msb",
       "color": "#7E57C2",
       "packageKeywords": [
         "msb"
@@ -294,6 +360,7 @@
     },
     {
       "name": "TNEX",
+      "shortName": "msb",
       "color": "#00CBD6",
       "packageKeywords": [
         "tnex",
@@ -306,13 +373,13 @@
       "parserConfig": {
         "amountPatterns": [
           {
-            "pattern": "\\(([\\+\\-])\\)\\s*([0-9.,]+)",
+            "pattern": "\\(([\\+\\-])\\)\\s*([0-9.,]+)(?!\\s*%)",
             "type": "sign_amount",
             "signGroup": 1,
             "amountGroup": 2
           },
           {
-            "pattern": "([\\+\\-])\\s*([0-9.,]+)\\s*(?:VND|VNĐ|đ|d|vnd)?",
+            "pattern": "([\\+\\-])\\s*([0-9.,]+)(?!\\s*%)\\s*(?:VND|VNĐ|đ|d|vnd)?",
             "type": "sign_amount",
             "signGroup": 1,
             "amountGroup": 2
@@ -336,6 +403,7 @@
     },
     {
       "name": "Momo",
+      "shortName": "momo",
       "color": "#E11880",
       "packageKeywords": [
         "momo",
@@ -478,5 +546,5 @@
       "mặt"
     ]
   },
-  "version": 17
+  "version": 19
 }

@@ -36,3 +36,6 @@ local.properties
 
 captures/
 db/
+
+.agent/
+/drawio

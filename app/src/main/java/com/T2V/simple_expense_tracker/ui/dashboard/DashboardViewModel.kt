@@ -6,6 +6,7 @@ import com.T2V.simple_expense_tracker.domain.model.BankAccount
 import com.T2V.simple_expense_tracker.domain.model.Transaction
 import com.T2V.simple_expense_tracker.domain.usecase.GetBankAccountsUseCase
 import com.T2V.simple_expense_tracker.domain.usecase.GetTransactionsUseCase
+import com.T2V.simple_expense_tracker.domain.parser.NotificationParser
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -33,7 +34,10 @@ data class DashboardUiState(
     val selectedDays: List<Long> = getDefaultDays(),
     val selectedWeeks: List<Long> = getDefaultWeeks(),
     val selectedMonths: List<Pair<Int, Int>> = getDefaultMonths(),
-    val selectedYears: List<Int> = getDefaultYears()
+    val selectedYears: List<Int> = getDefaultYears(),
+    val selectedQrBankAccountId: Long? = null,
+    val isTotalBalanceVisible: Boolean = false,
+    val visibleBankAccountIds: Set<Long> = emptySet()
 ) {
     companion object {
         fun getDefaultDays(): List<Long> {
@@ -248,11 +252,17 @@ data class DashboardUiState(
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     getBankAccountsUseCase: GetBankAccountsUseCase,
-    getTransactionsUseCase: GetTransactionsUseCase
+    getTransactionsUseCase: GetTransactionsUseCase,
+    private val notificationParser: NotificationParser
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
+
+    /** Lấy mã viết tắt của ngân hàng từ parser config JSON */
+    fun getBankShortName(bankName: String): String {
+        return notificationParser.getBankShortName(bankName) ?: bankName.lowercase().replace("\\s+".toRegex(), "")
+    }
 
     init {
         // Kết hợp 2 luồng dữ liệu từ DB — khi bất kỳ nguồn nào thay đổi, UI tự cập nhật
@@ -371,6 +381,42 @@ class DashboardViewModel @Inject constructor(
     fun removeSelectedYear(year: Int) {
         _uiState.update { state ->
             state.copy(selectedYears = state.selectedYears.filter { it != year })
+        }
+    }
+
+    /** Chọn tài khoản để hiển thị mã QR */
+    fun selectQrBankAccount(accountId: Long?) {
+        _uiState.update { it.copy(selectedQrBankAccountId = accountId) }
+    }
+
+    /** Bật/tắt hiển thị tổng số dư */
+    fun toggleTotalBalanceVisibility() {
+        _uiState.update { it.copy(isTotalBalanceVisible = !it.isTotalBalanceVisible) }
+    }
+
+    /** Bật/tắt hiển thị số dư của một tài khoản ngân hàng */
+    fun toggleBankAccountVisibility(accountId: Long) {
+        _uiState.update { state ->
+            val current = state.visibleBankAccountIds
+            val next = if (current.contains(accountId)) {
+                current - accountId
+            } else {
+                current + accountId
+            }
+            state.copy(visibleBankAccountIds = next)
+        }
+    }
+
+    /** Bật/tắt hiển thị số dư cho tất cả tài khoản ngân hàng */
+    fun toggleAllBankAccountsVisibility(visible: Boolean) {
+        _uiState.update { state ->
+            state.copy(
+                visibleBankAccountIds = if (visible) {
+                    state.bankAccounts.map { it.id }.toSet()
+                } else {
+                    emptySet()
+                }
+            )
         }
     }
 }

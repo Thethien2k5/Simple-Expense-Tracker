@@ -18,7 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.foundation.layout.fillMaxWidth
- import androidx.compose.material3.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ModalDrawerSheet
@@ -45,12 +45,13 @@ import com.T2V.simple_expense_tracker.ui.theme.SimpleExpenseTrackerTheme
 import com.T2V.simple_expense_tracker.ui.theme.SurfaceContainerHigh
 import com.T2V.simple_expense_tracker.ui.theme.LocalAppStrings
 import com.T2V.simple_expense_tracker.ui.theme.getAppStringsForLanguage
+import com.T2V.simple_expense_tracker.util.MockDataSeeder
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.first
 import com.T2V.simple_expense_tracker.util.LocaleHelper
-import  com.T2V.simple_expense_tracker.domain.repository.LanguageRepository
+import com.T2V.simple_expense_tracker.domain.repository.LanguageRepository
 
 @AndroidEntryPoint
 class MainActivity : androidx.fragment.app.FragmentActivity() {
@@ -58,13 +59,15 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
     lateinit var themeRepository: ThemeRepository
     @Inject
     lateinit var languageRepository: LanguageRepository
+    @Inject
+    lateinit var mockDataSeeder: MockDataSeeder
 
     private val isDeviceUnlocked = mutableStateOf(false)
 
     private fun showBiometricPrompt() {
         val biometricManager = BiometricManager.from(this)
         val authenticators = BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL
-        
+
         val canAuthenticate = biometricManager.canAuthenticate(authenticators)
         if (canAuthenticate != BiometricManager.BIOMETRIC_SUCCESS) {
             isDeviceUnlocked.value = true
@@ -120,6 +123,7 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
 
         enableEdgeToEdge()
         tryRebindNotificationListener()
+        mockDataSeeder.seedIfNeeded()
         setContent {
             val theme = themeRepository.selectedTheme.collectAsState(initial = AppTheme.EMERALD).value
             val currentLanguage = languageRepository.selectedLanguage.collectAsState(initial = com.T2V.simple_expense_tracker.domain.repository.AppLanguage.VIETNAMESE).value
@@ -230,11 +234,10 @@ fun MainApp() {
     val leftDrawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     // Right drawer state (Notifications)
     val rightDrawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-    
+
     val scope = rememberCoroutineScope()
 
     // Right Drawer (Notifications) wraps the Left Drawer
-    // Trick: Thay đổi LayoutDirection thành RTL để ModalNavigationDrawer hiển thị từ bên phải
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         ModalNavigationDrawer(
             drawerState = rightDrawerState,
@@ -312,27 +315,27 @@ fun LockScreen(
                     modifier = Modifier.size(48.dp)
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(24.dp))
-            
+
             Text(
                 text = "Simple Expense Tracker",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             Text(
                 text = "Ứng dụng đang được khóa để bảo mật",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
-            
+
             Spacer(modifier = Modifier.height(48.dp))
-            
+
             Button(
                 onClick = onUnlockClick,
                 colors = ButtonDefaults.buttonColors(

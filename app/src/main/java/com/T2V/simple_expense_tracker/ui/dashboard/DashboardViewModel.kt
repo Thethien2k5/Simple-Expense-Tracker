@@ -190,7 +190,7 @@ data class DashboardUiState(
                     val dayTransactions = allTransactions.filter { it.timestamp in startOfDay until (startOfDay + 86_400_000L) }
                     val income = dayTransactions.filter { it.amount > 0 }.sumOf { it.amount }
                     val expense = dayTransactions.filter { it.amount < 0 }.sumOf { kotlin.math.abs(it.amount) }
-                    BarChartData(label, income, expense)
+                    BarChartData(label, income, expense, transactions = dayTransactions)
                 }
             }
             StatsTimePeriod.WEEK -> {
@@ -201,7 +201,7 @@ data class DashboardUiState(
                     val weekTransactions = allTransactions.filter { it.timestamp in startOfWeek until (startOfWeek + 7 * 86_400_000L) }
                     val income = weekTransactions.filter { it.amount > 0 }.sumOf { it.amount }
                     val expense = weekTransactions.filter { it.amount < 0 }.sumOf { kotlin.math.abs(it.amount) }
-                    BarChartData(label, income, expense)
+                    BarChartData(label, income, expense, transactions = weekTransactions)
                 }
             }
             StatsTimePeriod.MONTH -> {
@@ -219,7 +219,7 @@ data class DashboardUiState(
                     val monthTransactions = allTransactions.filter { it.timestamp in start until end }
                     val income = monthTransactions.filter { it.amount > 0 }.sumOf { it.amount }
                     val expense = monthTransactions.filter { it.amount < 0 }.sumOf { kotlin.math.abs(it.amount) }
-                    BarChartData(label, income, expense)
+                    BarChartData(label, income, expense, transactions = monthTransactions)
                 }
             }
             StatsTimePeriod.YEAR -> {
@@ -237,7 +237,7 @@ data class DashboardUiState(
                     val yearTransactions = allTransactions.filter { it.timestamp in start until end }
                     val income = yearTransactions.filter { it.amount > 0 }.sumOf { it.amount }
                     val expense = yearTransactions.filter { it.amount < 0 }.sumOf { kotlin.math.abs(it.amount) }
-                    BarChartData(label, income, expense)
+                    BarChartData(label, income, expense, transactions = yearTransactions)
                 }
             }
         }

@@ -3,6 +3,8 @@ package com.T2V.simple_expense_tracker.ui.dashboard
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -21,16 +23,15 @@ import androidx.compose.ui.text.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.T2V.simple_expense_tracker.domain.model.Transaction
 import java.util.Locale
+import kotlin.math.roundToInt
 
-/**
- * Dữ liệu cho một cột trong biểu đồ trụ — lưu cả thu nhập và chi tiêu
- * để vẽ so sánh song song.
- */
 data class BarChartData(
     val label: String,
     val income: Double,
-    val expense: Double
+    val expense: Double,
+    val transactions: List<Transaction> = emptyList()
 )
 
 @Composable
@@ -43,8 +44,10 @@ fun BarChart(
     val errorColor = MaterialTheme.colorScheme.error
     val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
     val gridColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+    val tooltipBgColor = MaterialTheme.colorScheme.inverseSurface
+    val tooltipTextColor = MaterialTheme.colorScheme.inverseOnSurface
     val textMeasurer = rememberTextMeasurer()
-    var hoveredBar by remember { mutableStateOf<Pair<Int, Boolean>?>(null) }
+    var selectedIndex by remember { mutableStateOf<Int?>(null) }
 
     val animationProgress = remember { Animatable(0f) }
     LaunchedEffect(data, viewMode) {
@@ -58,41 +61,21 @@ fun BarChart(
                 .fillMaxWidth()
                 .height(180.dp)
                 .pointerInput(data, viewMode) {
-                    awaitPointerEventScope {
-                        while (true) {
-                            val event = awaitPointerEvent()
-                            val pos = event.changes.first().position
-                            val inside = pos.x in 0f..size.width.toFloat() && pos.y in 0f..size.height.toFloat()
-                            if (!inside) {
-                                hoveredBar = null
-                                continue
-                            }
-                            val barAreaWidth = size.width.toFloat() / data.size
-                            val barWidth = (barAreaWidth * 0.28f).coerceAtMost(48f)
-                            val gap = barWidth * 0.15f
-                            val rawIndex = (pos.x / barAreaWidth).toInt().coerceIn(0, data.lastIndex)
-                            val barCenterX = barAreaWidth * rawIndex + barAreaWidth / 2
-                            val relX = pos.x - rawIndex * barAreaWidth
-                            val isIncome = when (viewMode) {
-                                StatsViewMode.BOTH -> relX < barAreaWidth / 2
-                                StatsViewMode.INCOME -> true
-                                StatsViewMode.EXPENSE -> false
-                            }
-                            val isOverBar = when (viewMode) {
-                                StatsViewMode.BOTH -> {
-                                    val incomeLeft = barCenterX - barWidth - gap / 2
-                                    val expenseLeft = barCenterX + gap / 2
-                                    (relX >= incomeLeft && relX <= incomeLeft + barWidth) ||
-                                            (relX >= expenseLeft && relX <= expenseLeft + barWidth)
-                                }
-                                else -> {
-                                    val barLeft = barCenterX - barWidth / 2
-                                    relX >= barLeft && relX <= barLeft + barWidth
-                                }
-                            }
-                            hoveredBar = if (isOverBar) (rawIndex to isIncome) else null
-                        }
-                    }
+                    if (data.isEmpty()) return@pointerInput
+                    detectDragGestures(
+                        onDragStart = { offset ->
+                            val barAreaWidth = size.width / data.size
+                            val rawIndex = (offset.x / barAreaWidth).toInt().coerceIn(0, data.size - 1)
+                            selectedIndex = rawIndex
+                        },
+                        onDrag = { change, _ ->
+                            val barAreaWidth = size.width / data.size
+                            val rawIndex = (change.position.x / barAreaWidth).toInt().coerceIn(0, data.size - 1)
+                            selectedIndex = rawIndex
+                        },
+                        onDragEnd = { selectedIndex = null },
+                        onDragCancel = { selectedIndex = null }
+                    )
                 }
         ) {
             if (data.isEmpty()) return@Canvas
@@ -101,12 +84,11 @@ fun BarChart(
                 StatsViewMode.EXPENSE -> data.maxOfOrNull { it.expense } ?: 0.0
                 StatsViewMode.BOTH -> data.maxOf { maxOf(it.income, it.expense) }
             }.coerceAtLeast(1.0)
-            val chartHeight = size.height * 0.85f
+            val chartHeight = size.height * 0.82f
             val barAreaWidth = size.width / data.size
             val barWidth = (barAreaWidth * 0.28f).coerceAtMost(48f)
             val gap = barWidth * 0.15f
 
-            // Lưới ngang nhẹ
             for (i in 1..3) {
                 val y = size.height - (chartHeight * i / 4)
                 drawLine(
@@ -120,28 +102,30 @@ fun BarChart(
 
             data.forEachIndexed { index, item ->
                 val centerX = barAreaWidth * index + barAreaWidth / 2
-                val isHoveredIncome = hoveredBar == (index to true)
-                val isHoveredExpense = hoveredBar == (index to false)
+                val isSelected = selectedIndex == null || selectedIndex == index
+                val alphaMultiplier = if (isSelected) 1f else 0.35f
 
                 when (viewMode) {
                     StatsViewMode.INCOME, StatsViewMode.BOTH -> {
                         val incomeHeight = (item.income / maxValue * chartHeight * animationProgress.value).toFloat()
                         val left = centerX - barWidth - gap / 2
-                        val hoverBoost = if (isHoveredIncome) 4f else 0f
                         drawRoundRect(
-                            color = primaryColor.copy(alpha = 0.12f),
+                            color = primaryColor.copy(alpha = 0.12f * alphaMultiplier),
                             topLeft = Offset(left, size.height - chartHeight),
-                            size = Size(barWidth, chartHeight + hoverBoost),
+                            size = Size(barWidth, chartHeight),
                             cornerRadius = CornerRadius(8f, 8f)
                         )
                         drawRoundRect(
                             brush = Brush.verticalGradient(
-                                colors = listOf(primaryColor, primaryColor.copy(alpha = 0.7f)),
+                                colors = listOf(
+                                    primaryColor.copy(alpha = 1f * alphaMultiplier),
+                                    primaryColor.copy(alpha = 0.7f * alphaMultiplier)
+                                ),
                                 startY = size.height - incomeHeight,
                                 endY = size.height
                             ),
-                            topLeft = Offset(left, size.height - incomeHeight - hoverBoost / 2),
-                            size = Size(barWidth, incomeHeight + hoverBoost / 2),
+                            topLeft = Offset(left, size.height - incomeHeight),
+                            size = Size(barWidth, incomeHeight),
                             cornerRadius = CornerRadius(8f, 8f)
                         )
                     }
@@ -153,24 +137,25 @@ fun BarChart(
                         val expenseHeight = (item.expense / maxValue * chartHeight * animationProgress.value).toFloat()
                         val left = when (viewMode) {
                             StatsViewMode.BOTH -> centerX + gap / 2
-                            StatsViewMode.EXPENSE -> centerX - barWidth / 2
                             else -> centerX - barWidth / 2
                         }
-                        val hoverBoost = if (isHoveredExpense) 4f else 0f
                         drawRoundRect(
-                            color = errorColor.copy(alpha = 0.12f),
+                            color = errorColor.copy(alpha = 0.12f * alphaMultiplier),
                             topLeft = Offset(left, size.height - chartHeight),
-                            size = Size(barWidth, chartHeight + hoverBoost),
+                            size = Size(barWidth, chartHeight),
                             cornerRadius = CornerRadius(8f, 8f)
                         )
                         drawRoundRect(
                             brush = Brush.verticalGradient(
-                                colors = listOf(errorColor, errorColor.copy(alpha = 0.7f)),
+                                colors = listOf(
+                                    errorColor.copy(alpha = 1f * alphaMultiplier),
+                                    errorColor.copy(alpha = 0.7f * alphaMultiplier)
+                                ),
                                 startY = size.height - expenseHeight,
                                 endY = size.height
                             ),
-                            topLeft = Offset(left, size.height - expenseHeight - hoverBoost / 2),
-                            size = Size(barWidth, expenseHeight + hoverBoost / 2),
+                            topLeft = Offset(left, size.height - expenseHeight),
+                            size = Size(barWidth, expenseHeight),
                             cornerRadius = CornerRadius(8f, 8f)
                         )
                     }
@@ -178,41 +163,29 @@ fun BarChart(
                 }
             }
 
-            // Tooltip
-            hoveredBar?.let { (index, isIncome) ->
-                val item = data[index]
-                val value = if (isIncome) item.income else item.expense
-                val label = if (isIncome) "Thu" else "Chi"
-                val text = "$label: ${formatCurrency(kotlin.math.abs(value))}"
-                val textLayout = textMeasurer.measure(
-                    text,
-                    style = TextStyle(color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                )
-                val padH = 10.dp.toPx()
-                val padV = 6.dp.toPx()
-                val rectW = textLayout.size.width + padH * 2
-                val rectH = textLayout.size.height + padV * 2
-                val barAreaWidth = size.width / data.size
-                val barWidth = (barAreaWidth * 0.28f).coerceAtMost(48f)
-                val gap = barWidth * 0.15f
-                val barCenterX = barAreaWidth * index + barAreaWidth / 2
-                val barLeft = when {
-                    viewMode == StatsViewMode.BOTH && isIncome -> barCenterX - barWidth - gap / 2
-                    viewMode == StatsViewMode.BOTH && !isIncome -> barCenterX + gap / 2
-                    else -> barCenterX - barWidth / 2
+            selectedIndex?.let { index ->
+                if (index in data.indices) {
+                    val barAreaWidth = size.width / data.size
+                    val centerX = barAreaWidth * index + barAreaWidth / 2
+                    drawLine(
+                        color = tooltipBgColor.copy(alpha = 0.5f),
+                        start = Offset(centerX, 0f),
+                        end = Offset(centerX, size.height),
+                        strokeWidth = 1.5f,
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 6f))
+                    )
+                    val item = data[index]
+                    drawBarChartTooltip(
+                        textMeasurer = textMeasurer,
+                        item = item,
+                        centerX = centerX,
+                        tooltipBgColor = tooltipBgColor,
+                        tooltipTextColor = tooltipTextColor,
+                        primaryColor = primaryColor,
+                        errorColor = errorColor,
+                        viewMode = viewMode
+                    )
                 }
-                val tooltipX = (barLeft + barWidth / 2 - rectW / 2).coerceIn(2f, size.width - rectW - 2f)
-                val tooltipY = (size.height * 0.85f - rectH - 8f).coerceAtLeast(2f)
-                drawRoundRect(
-                    color = if (isIncome) primaryColor else errorColor,
-                    topLeft = Offset(tooltipX, tooltipY),
-                    size = Size(rectW, rectH),
-                    cornerRadius = CornerRadius(6f, 6f)
-                )
-                drawText(
-                    textLayoutResult = textLayout,
-                    topLeft = Offset(tooltipX + padH, tooltipY + padV)
-                )
             }
         }
 
@@ -287,8 +260,10 @@ fun LineChart(
     val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
     val gridColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
     val onSurface = MaterialTheme.colorScheme.onSurface
+    val tooltipBgColor = MaterialTheme.colorScheme.inverseSurface
+    val tooltipTextColor = MaterialTheme.colorScheme.inverseOnSurface
     val textMeasurer = rememberTextMeasurer()
-    var activePoint by remember { mutableStateOf<Pair<Int, Boolean>?>(null) }
+    var selectedIndex by remember { mutableStateOf<Int?>(null) }
 
     val animationProgress = remember { Animatable(0f) }
     LaunchedEffect(data, viewMode) {
@@ -302,31 +277,33 @@ fun LineChart(
                 .fillMaxWidth()
                 .height(180.dp)
                 .pointerInput(data, viewMode) {
-                    awaitPointerEventScope {
-                        while (true) {
-                            val event = awaitPointerEvent()
-                            val pos = event.changes.first().position
-                            val inside = pos.x in 0f..size.width.toFloat() && pos.y in 0f..size.height.toFloat()
-                            if (!inside || data.size < 2) {
-                                activePoint = null
-                                continue
-                            }
-                            val stepX = size.width.toFloat() / (data.size - 1)
-                            val rawIndex = (pos.x / stepX).toInt().coerceIn(0, data.lastIndex)
-                            val distToIdx = kotlin.math.abs(pos.x - stepX * rawIndex)
-                            val distToNext = if (rawIndex < data.lastIndex) kotlin.math.abs(pos.x - stepX * (rawIndex + 1)) else Float.MAX_VALUE
-                            val idx = if (distToNext < distToIdx && rawIndex < data.lastIndex) rawIndex + 1 else rawIndex
-                            val isIncome = when (viewMode) {
-                                StatsViewMode.BOTH -> pos.y < size.height / 2
-                                StatsViewMode.INCOME -> true
-                                StatsViewMode.EXPENSE -> false
-                            }
-                            activePoint = idx to isIncome
+                    if (data.isEmpty()) return@pointerInput
+                    detectTapGestures(
+                        onPress = { offset ->
+                            val stepX = size.width / (data.size - 1)
+                            selectedIndex = (offset.x / stepX).roundToInt().coerceIn(0, data.size - 1)
+                            tryAwaitRelease()
+                            selectedIndex = null
                         }
-                    }
+                    )
+                }
+                .pointerInput(data, viewMode) {
+                    if (data.isEmpty()) return@pointerInput
+                    detectDragGestures(
+                        onDragStart = { offset ->
+                            val stepX = size.width / (data.size - 1)
+                            selectedIndex = (offset.x / stepX).roundToInt().coerceIn(0, data.size - 1)
+                        },
+                        onDrag = { change, _ ->
+                            val stepX = size.width / (data.size - 1)
+                            selectedIndex = (change.position.x / stepX).roundToInt().coerceIn(0, data.size - 1)
+                        },
+                        onDragEnd = { selectedIndex = null },
+                        onDragCancel = { selectedIndex = null }
+                    )
                 }
         ) {
-            if (data.size < 2) return@Canvas
+            if (data.isEmpty()) return@Canvas
             val incomeMax = data.maxOf { it.income }.coerceAtLeast(1.0)
             val expenseMax = data.maxOf { it.expense }.coerceAtLeast(1.0)
             val maxValue = when (viewMode) {
@@ -335,7 +312,7 @@ fun LineChart(
                 StatsViewMode.BOTH -> maxOf(incomeMax, expenseMax)
             }
             val stepX = size.width / (data.size - 1)
-            val chartHeight = size.height * 0.85f
+            val chartHeight = size.height * 0.82f
 
             fun valueToY(value: Double): Float {
                 return (size.height - (value / maxValue * chartHeight * animationProgress.value)).toFloat()
@@ -377,10 +354,20 @@ fun LineChart(
                     )
                 }
                 data.forEachIndexed { i, point ->
+                    val isSelected = selectedIndex == i
                     val cx = stepX * i
                     val cy = valueToY(point.income)
-                    drawCircle(color = primaryColor, radius = 5f, center = Offset(cx, cy))
-                    drawCircle(color = onSurface, radius = 2.5f, center = Offset(cx, cy))
+                    val alpha = if (selectedIndex == null || isSelected) 1f else 0.35f
+                    drawCircle(
+                        color = primaryColor.copy(alpha = alpha),
+                        radius = if (isSelected) 7f else 5f,
+                        center = Offset(cx, cy)
+                    )
+                    drawCircle(
+                        color = onSurface.copy(alpha = alpha),
+                        radius = if (isSelected) 3.5f else 2.5f,
+                        center = Offset(cx, cy)
+                    )
                 }
             }
 
@@ -409,39 +396,43 @@ fun LineChart(
                     )
                 }
                 data.forEachIndexed { i, point ->
+                    val isSelected = selectedIndex == i
                     val cx = stepX * i
                     val cy = valueToY(point.expense)
-                    drawCircle(color = errorColor, radius = 5f, center = Offset(cx, cy))
-                    drawCircle(color = onSurface, radius = 2.5f, center = Offset(cx, cy))
+                    val alpha = if (selectedIndex == null || isSelected) 1f else 0.35f
+                    drawCircle(
+                        color = errorColor.copy(alpha = alpha),
+                        radius = if (isSelected) 7f else 5f,
+                        center = Offset(cx, cy)
+                    )
+                    drawCircle(
+                        color = onSurface.copy(alpha = alpha),
+                        radius = if (isSelected) 3.5f else 2.5f,
+                        center = Offset(cx, cy)
+                    )
                 }
             }
 
-            // Tooltip
-            activePoint?.let { (idx, isIncome) ->
-                if (idx in data.indices) {
-                    val item = data[idx]
-                    val value = if (isIncome) item.income else item.expense
-                    val label = if (isIncome) "Thu" else "Chi"
-                    val text = "$label: ${formatCurrency(kotlin.math.abs(value))}"
-                    val textLayout = textMeasurer.measure(
-                        text,
-                        style = TextStyle(color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            selectedIndex?.let { index ->
+                if (index in data.indices) {
+                    val cx = stepX * index
+                    drawLine(
+                        color = tooltipBgColor.copy(alpha = 0.5f),
+                        start = Offset(cx, 0f),
+                        end = Offset(cx, size.height),
+                        strokeWidth = 1.5f,
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 6f))
                     )
-                    val padH = 10.dp.toPx()
-                    val padV = 6.dp.toPx()
-                    val rectW = textLayout.size.width + padH * 2
-                    val rectH = textLayout.size.height + padV * 2
-                    val tooltipX = (stepX * idx - rectW / 2).coerceIn(2f, size.width - rectW - 2f)
-                    val tooltipY = 4f
-                    drawRoundRect(
-                        color = if (isIncome) primaryColor else errorColor,
-                        topLeft = Offset(tooltipX, tooltipY),
-                        size = Size(rectW, rectH),
-                        cornerRadius = CornerRadius(6f, 6f)
-                    )
-                    drawText(
-                        textLayoutResult = textLayout,
-                        topLeft = Offset(tooltipX + padH, tooltipY + padV)
+                    val item = data[index]
+                    drawLineChartTooltip(
+                        textMeasurer = textMeasurer,
+                        item = item,
+                        centerX = cx,
+                        tooltipBgColor = tooltipBgColor,
+                        tooltipTextColor = tooltipTextColor,
+                        primaryColor = primaryColor,
+                        errorColor = errorColor,
+                        viewMode = viewMode
                     )
                 }
             }
@@ -507,7 +498,142 @@ fun LineChart(
     }
 }
 
-/** Định dạng số tiền theo kiểu Việt Nam */
+private fun DrawScope.drawBarChartTooltip(
+    textMeasurer: TextMeasurer,
+    item: BarChartData,
+    centerX: Float,
+    tooltipBgColor: Color,
+    tooltipTextColor: Color,
+    primaryColor: Color,
+    errorColor: Color,
+    viewMode: StatsViewMode
+) {
+    val labelStr = item.label
+    val incomeStr = "Thu: ${formatCurrency(item.income)}"
+    val expenseStr = "Chi: ${formatCurrency(item.expense)}"
+    val netBalance = item.income - item.expense
+    val netStr = "Ròng: ${if (netBalance >= 0) "+" else "-"}${formatCurrency(kotlin.math.abs(netBalance))}"
+
+    val headerStyle = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Bold, color = tooltipTextColor)
+    val incomeStyle = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Medium, color = primaryColor)
+    val expenseStyle = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Medium, color = errorColor)
+    val netStyle = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = tooltipTextColor)
+
+    val labelLayout = textMeasurer.measure(labelStr, style = headerStyle)
+    val incomeLayout = textMeasurer.measure(incomeStr, style = incomeStyle)
+    val expenseLayout = textMeasurer.measure(expenseStr, style = expenseStyle)
+    val netLayout = textMeasurer.measure(netStr, style = netStyle)
+
+    val paddingH = 12f
+    val paddingV = 10f
+    val lineSpacing = 4f
+
+    val maxTextWidth = maxOf(labelLayout.size.width, incomeLayout.size.width, expenseLayout.size.width, netLayout.size.width)
+    val contentHeight = labelLayout.size.height + incomeLayout.size.height + expenseLayout.size.height + netLayout.size.height
+    val tooltipWidth = maxTextWidth + paddingH * 2
+    val tooltipHeight = contentHeight + paddingV * 2 + lineSpacing * 3
+
+    val maxTooltipWidth = size.width * 0.75f
+    val finalWidth = minOf(tooltipWidth, maxTooltipWidth)
+
+    var tooltipX = centerX - finalWidth / 2
+    tooltipX = tooltipX.coerceIn(4f, size.width - finalWidth - 4f)
+    val tooltipY = size.height * 0.82f - tooltipHeight - 12f
+
+    drawRoundRect(
+        color = tooltipBgColor,
+        topLeft = Offset(tooltipX, tooltipY),
+        size = Size(finalWidth, tooltipHeight),
+        cornerRadius = CornerRadius(12f, 12f)
+    )
+
+    var currentY = tooltipY + paddingV
+    val contentX = tooltipX + paddingH
+
+    drawText(textMeasurer, labelStr, topLeft = Offset(contentX, currentY), style = headerStyle)
+    currentY += labelLayout.size.height + lineSpacing
+
+    if (viewMode != StatsViewMode.EXPENSE) {
+        drawText(textMeasurer, incomeStr, topLeft = Offset(contentX, currentY), style = incomeStyle)
+    }
+    currentY += incomeLayout.size.height + lineSpacing
+
+    if (viewMode != StatsViewMode.INCOME) {
+        drawText(textMeasurer, expenseStr, topLeft = Offset(contentX, currentY), style = expenseStyle)
+    }
+    currentY += expenseLayout.size.height + lineSpacing
+
+    drawText(textMeasurer, netStr, topLeft = Offset(contentX, currentY), style = netStyle)
+}
+
+private fun DrawScope.drawLineChartTooltip(
+    textMeasurer: TextMeasurer,
+    item: BarChartData,
+    centerX: Float,
+    tooltipBgColor: Color,
+    tooltipTextColor: Color,
+    primaryColor: Color,
+    errorColor: Color,
+    viewMode: StatsViewMode
+) {
+    val labelStr = item.label
+    val incomeStr = "Thu: ${formatCurrency(item.income)}"
+    val expenseStr = "Chi: ${formatCurrency(item.expense)}"
+    val netBalance = item.income - item.expense
+    val netStr = "Ròng: ${if (netBalance >= 0) "+" else "-"}${formatCurrency(kotlin.math.abs(netBalance))}"
+
+    val headerStyle = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Bold, color = tooltipTextColor)
+    val incomeStyle = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Medium, color = primaryColor)
+    val expenseStyle = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Medium, color = errorColor)
+    val netStyle = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = tooltipTextColor)
+
+    val labelLayout = textMeasurer.measure(labelStr, style = headerStyle)
+    val incomeLayout = textMeasurer.measure(incomeStr, style = incomeStyle)
+    val expenseLayout = textMeasurer.measure(expenseStr, style = expenseStyle)
+    val netLayout = textMeasurer.measure(netStr, style = netStyle)
+
+    val paddingH = 12f
+    val paddingV = 10f
+    val lineSpacing = 4f
+
+    val maxTextWidth = maxOf(labelLayout.size.width, incomeLayout.size.width, expenseLayout.size.width, netLayout.size.width)
+    val contentHeight = labelLayout.size.height + incomeLayout.size.height + expenseLayout.size.height + netLayout.size.height
+    val tooltipWidth = maxTextWidth + paddingH * 2
+    val tooltipHeight = contentHeight + paddingV * 2 + lineSpacing * 3
+
+    val maxTooltipWidth = size.width * 0.75f
+    val finalWidth = minOf(tooltipWidth, maxTooltipWidth)
+
+    var tooltipX = centerX - finalWidth / 2
+    tooltipX = tooltipX.coerceIn(4f, size.width - finalWidth - 4f)
+    val tooltipY = 4f
+
+    drawRoundRect(
+        color = tooltipBgColor,
+        topLeft = Offset(tooltipX, tooltipY),
+        size = Size(finalWidth, tooltipHeight),
+        cornerRadius = CornerRadius(12f, 12f)
+    )
+
+    var currentY = tooltipY + paddingV
+    val contentX = tooltipX + paddingH
+
+    drawText(textMeasurer, labelStr, topLeft = Offset(contentX, currentY), style = headerStyle)
+    currentY += labelLayout.size.height + lineSpacing
+
+    if (viewMode != StatsViewMode.EXPENSE) {
+        drawText(textMeasurer, incomeStr, topLeft = Offset(contentX, currentY), style = incomeStyle)
+    }
+    currentY += incomeLayout.size.height + lineSpacing
+
+    if (viewMode != StatsViewMode.INCOME) {
+        drawText(textMeasurer, expenseStr, topLeft = Offset(contentX, currentY), style = expenseStyle)
+    }
+    currentY += expenseLayout.size.height + lineSpacing
+
+    drawText(textMeasurer, netStr, topLeft = Offset(contentX, currentY), style = netStyle)
+}
+
 fun formatCurrency(amount: Double): String {
     val absAmount = kotlin.math.abs(amount)
     return when {
@@ -518,7 +644,6 @@ fun formatCurrency(amount: Double): String {
     }
 }
 
-/** Định dạng số tiền hiển thị đầy đủ với dấu +/- */
 fun formatAmount(amount: Double): String {
     val formatted = String.format(Locale.US, "%,.0f", kotlin.math.abs(amount))
     val prefix = if (amount >= 0) "+" else "-"

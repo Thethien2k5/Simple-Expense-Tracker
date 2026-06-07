@@ -45,13 +45,12 @@ import com.T2V.simple_expense_tracker.ui.theme.SimpleExpenseTrackerTheme
 import com.T2V.simple_expense_tracker.ui.theme.SurfaceContainerHigh
 import com.T2V.simple_expense_tracker.ui.theme.LocalAppStrings
 import com.T2V.simple_expense_tracker.ui.theme.getAppStringsForLanguage
-import com.T2V.simple_expense_tracker.util.MockDataSeeder
+import com.T2V.simple_expense_tracker.util.LocaleHelper
+import com.T2V.simple_expense_tracker.domain.repository.LanguageRepository
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.first
-import com.T2V.simple_expense_tracker.util.LocaleHelper
-import com.T2V.simple_expense_tracker.domain.repository.LanguageRepository
 
 @AndroidEntryPoint
 class MainActivity : androidx.fragment.app.FragmentActivity() {
@@ -59,8 +58,6 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
     lateinit var themeRepository: ThemeRepository
     @Inject
     lateinit var languageRepository: LanguageRepository
-    @Inject
-    lateinit var mockDataSeeder: MockDataSeeder
 
     private val isDeviceUnlocked = mutableStateOf(false)
 
@@ -123,7 +120,6 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
 
         enableEdgeToEdge()
         tryRebindNotificationListener()
-        mockDataSeeder.seedIfNeeded()
         setContent {
             val theme = themeRepository.selectedTheme.collectAsState(initial = AppTheme.EMERALD).value
             val currentLanguage = languageRepository.selectedLanguage.collectAsState(initial = com.T2V.simple_expense_tracker.domain.repository.AppLanguage.VIETNAMESE).value

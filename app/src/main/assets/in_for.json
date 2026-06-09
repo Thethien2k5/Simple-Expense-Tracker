@@ -2,5 +2,5 @@
   "appName": "Simple Expense Tracker",
   "version": "1.0.0",
   "developer": "T2V",
-  "description": "Ứng dụng quản lý chi tiêu hoàn toàn offline. Tự động đọc và lưu lại biến động số dư từ các thông báo ngân hàng và ví điện tử, giúp bạn dễ dàng theo dõi thu chi mà không cần nhập tay."
+  "description": "Ứng dụng quản lý chi tiêu hoàn toàn offline. Tự động đọc và lưu lại biến động số dư từ các thông báo\nngân hàng và ví điện tử, giúp bạn dễ dàng theo dõi thu chi mà không cần nhập tay.\nCác ngân hàng được hỗ trợ tốt: Vietcombank, BIDV, TNEX.\nCác ngân hàng được hỗ trợ: Techcombank, MB Bank, TPBank, VPBank, Agribank, Sacombank, ACB, MSB."
 }

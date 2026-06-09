@@ -512,7 +512,7 @@ private fun DrawScope.drawBarChartTooltip(
     val incomeStr = "Thu: ${formatCurrency(item.income)}"
     val expenseStr = "Chi: ${formatCurrency(item.expense)}"
     val netBalance = item.income - item.expense
-    val netStr = "Ròng: ${if (netBalance >= 0) "+" else "-"}${formatCurrency(kotlin.math.abs(netBalance))}"
+    val netStr = "Chênh lệch: ${if (netBalance >= 0) "+" else "-"}${formatCurrency(kotlin.math.abs(netBalance))}"
 
     val headerStyle = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Bold, color = tooltipTextColor)
     val incomeStyle = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Medium, color = primaryColor)
@@ -580,7 +580,7 @@ private fun DrawScope.drawLineChartTooltip(
     val incomeStr = "Thu: ${formatCurrency(item.income)}"
     val expenseStr = "Chi: ${formatCurrency(item.expense)}"
     val netBalance = item.income - item.expense
-    val netStr = "Ròng: ${if (netBalance >= 0) "+" else "-"}${formatCurrency(kotlin.math.abs(netBalance))}"
+    val netStr = "Chênh lệch: ${if (netBalance >= 0) "+" else "-"}${formatCurrency(kotlin.math.abs(netBalance))}"
 
     val headerStyle = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Bold, color = tooltipTextColor)
     val incomeStyle = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Medium, color = primaryColor)

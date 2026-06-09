@@ -858,7 +858,7 @@ private fun StatsSection(
                     }
                 }
             }
-            // Dòng số dư ròng
+            // Dòng số dư Chênh lệch
             val netColor = if (state.statsNetBalance >= 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
             val netLabel = if (state.statsNetBalance >= 0) LocalAppStrings.current.netSurplus else LocalAppStrings.current.netDeficit
             Surface(

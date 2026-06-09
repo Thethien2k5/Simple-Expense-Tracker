@@ -120,7 +120,7 @@ data class DashboardUiState(
     val statsExpense: Double
         get() = getStatsTransactions().filter { it.amount < 0 }.sumOf { kotlin.math.abs(it.amount) }
 
-    /** Số dư ròng (Thu - Chi) trong khoảng thời gian thống kê */
+    /** Số dư Chênh lệch (Thu - Chi) trong khoảng thời gian thống kê */
     val statsNetBalance: Double
         get() = statsIncome - statsExpense
 

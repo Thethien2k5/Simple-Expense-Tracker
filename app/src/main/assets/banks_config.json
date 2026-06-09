@@ -415,14 +415,31 @@
       "parserConfig": {
         "amountPatterns": [
           {
-            "pattern": "(?:GD|giao dich)\\s*:?\\s*([\\+\\-])\\s*([0-9.,]+)\\s*(?:VND|đ|d|vnd|Vnd)",
+            "pattern": "(?:GD|giao dich)\\s*:?\\s*([\\+\\-])\\s*([0-9.,]+)\\s*(?:VND|đ|d|vnd|Vnd|₫)",
             "type": "sign_amount",
             "signGroup": 1,
             "amountGroup": 2
+          },
+          {
+            "pattern": "(?:Số tiền|So tien)\\s*([0-9.,]+)\\s*(?:đ|d|VND|vnd|₫)?\\s*,\\s*(?:kèm lời|kem loi)",
+            "type": "fixed_income",
+            "amountGroup": 1
+          },
+          {
+            "pattern": "(?:Số tiền|So tien)\\s*([\\+\\-]?)\\s*([0-9.,]+)\\s*(?:đ|d|VND|vnd|₫)?",
+            "type": "sign_amount",
+            "signGroup": 1,
+            "amountGroup": 2
+          },
+          {
+            "pattern": "([0-9.,]+)\\s*(?:đ|d|VND|vnd|₫)",
+            "type": "raw_amount",
+            "amountGroup": 1
           }
         ],
         "accountPatterns": [],
         "contentPatterns": [
+          "(?:ND|noi dung|lời nhắn|loi nhan)\\s*:?\\s*[\"']?([^\"']+)[\"']?",
           "(?:ND|noi dung)\\s*:?\\s*(.+?)(?:\\.|$)"
         ],
         "balancePatterns": [
@@ -433,6 +450,7 @@
         ]
       }
     }
+
   ],
   "globalParserConfig": {
     "amountPatterns": [

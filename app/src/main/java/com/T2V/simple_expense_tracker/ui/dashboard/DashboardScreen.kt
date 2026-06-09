@@ -5,14 +5,11 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.*
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,7 +20,6 @@ import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.T2V.simple_expense_tracker.ui.theme.LocalAppStrings
@@ -33,7 +29,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -183,7 +178,7 @@ private fun BankLogoBadge(bankName: String, color: Color) {
         bankName.contains("TNEX", ignoreCase = true) -> "TNEX"
         else -> bankName.take(4).uppercase()
     }
-    
+
     Box(
         modifier = Modifier
             .size(width = 46.dp, height = 30.dp)
@@ -244,7 +239,7 @@ private fun StyledHiddenBalance(
                     ),
                     label = "dot_alpha_$index"
                 )
-                
+
                 Box(
                     modifier = Modifier
                         .size(dotSize)
@@ -312,7 +307,7 @@ private fun BalanceSection(
                 modifier = Modifier.padding(vertical = 12.dp)
             )
         }
-        
+
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
@@ -351,7 +346,7 @@ private fun BalanceSection(
                 }
             }
         }
- 
+
         AnimatedVisibility(visible = showAccounts) {
             Column(
                 modifier = Modifier
@@ -366,7 +361,7 @@ private fun BalanceSection(
                     val formattedBalance = formatAmount(balance).replace("+", "")
                     val isQrSelected = state.selectedQrBankAccountId == account.id
                     val isAccountVisible = state.visibleBankAccountIds.contains(account.id)
-                    
+
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -383,7 +378,7 @@ private fun BalanceSection(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Row(
-                                verticalAlignment = Alignment.CenterVertically, 
+                                verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                                 modifier = Modifier.weight(1f)
                             ) {
@@ -450,7 +445,7 @@ private fun BalanceSection(
                                 }
                             }
                         }
-                        
+
                         AnimatedVisibility(visible = isQrSelected) {
                             QrCodeBox(
                                 account = account,
@@ -537,9 +532,7 @@ private fun DetailListSection(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
                 TextButton(onClick = {
-                    datePickerState.selectedDateMillis?.let {
-                        onDateSelected(it)
-                    }
+                    datePickerState.selectedDateMillis?.let { onDateSelected(it) }
                     showDatePicker = false
                 }) {
                     Text("OK", color = MaterialTheme.colorScheme.primary)
@@ -571,7 +564,7 @@ private fun DetailListSection(
             set(Calendar.MINUTE, 0)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
-            
+
             val dayOfWeek = get(Calendar.DAY_OF_WEEK)
             // Lùi số ngày tương ứng để về Chủ Nhật đầu tuần (Calendar.SUNDAY = 1)
             add(Calendar.DAY_OF_YEAR, -(dayOfWeek - Calendar.SUNDAY))
@@ -601,7 +594,7 @@ private fun DetailListSection(
     ) {
         Column {
             // Phần chọn Ngày / Tháng cũ đã được loại bỏ.
-            
+
             // Scroller hiển thị tuần chứa ngày được chọn
             Row(
                 modifier = Modifier.horizontalScroll(rememberScrollState()),
@@ -707,7 +700,7 @@ private fun StatsSection(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 8.dp, bottom = 16.dp),
+                    .padding(top = 8.dp, bottom = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 ChartType.entries.forEach { type ->
@@ -752,6 +745,41 @@ private fun StatsSection(
                 }
             }
 
+            // === Tabs chọn chế độ xem (Chỉ Thu / Cả hai / Chỉ Chi) ===
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                StatsViewMode.entries.forEach { mode ->
+                    val isSelected = state.statsViewMode == mode
+                    val label = when (mode) {
+                        StatsViewMode.INCOME -> "Chỉ Thu nhập"
+                        StatsViewMode.EXPENSE -> "Chỉ Chi tiêu"
+                        StatsViewMode.BOTH -> "Cả hai"
+                    }
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = if (isSelected)
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                        else
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { viewModel.selectStatsViewMode(mode) }
+                    ) {
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp)
+                        )
+                    }
+                }
+            }
 
             // === KPI Summary Cards ===
             // Thẻ tóm tắt thu/chi/số dư
@@ -869,39 +897,12 @@ private fun StatsSection(
                 val chartData = state.getIncomeExpenseChartData()
                 if (chartData.any { it.income > 0 || it.expense > 0 }) {
                     when (state.chartType) {
-                        ChartType.BAR -> BarChart(data = chartData)
-                        ChartType.LINE -> LineChart(data = chartData)
+                        ChartType.BAR -> BarChart(data = chartData, viewMode = state.statsViewMode)
+                        ChartType.LINE -> LineChart(data = chartData, viewMode = state.statsViewMode)
                     }
                 } else {
                     Text(LocalAppStrings.current.noStatsData, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-            }
-
-            // === Chú giải ===
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 12.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(10.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(LocalAppStrings.current.income, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Spacer(modifier = Modifier.width(16.dp))
-                Box(
-                    modifier = Modifier
-                        .size(10.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.error)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(LocalAppStrings.current.expense, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
@@ -1168,178 +1169,174 @@ private fun StatsSection(
                     }
                 }
             }
-        }
-    }
 
-    // --- Sub-Dialogs chọn mốc thời gian ---
-    if (showDatePickerForDay) {
-        val datePickerState = rememberDatePickerState()
-        DatePickerDialog(
-            onDismissRequest = { showDatePickerForDay = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    datePickerState.selectedDateMillis?.let {
-                        viewModel.addSelectedDay(it)
-                    }
-                    showDatePickerForDay = false
-                }) {
-                    Text("OK", color = MaterialTheme.colorScheme.primary)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDatePickerForDay = false }) {
-                    Text("Hủy", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-        ) {
-            DatePicker(
-                state = datePickerState,
-                colors = DatePickerDefaults.colors(
-                    titleContentColor = MaterialTheme.colorScheme.onSurface,
-                    headlineContentColor = MaterialTheme.colorScheme.onSurface,
-                    selectedDayContainerColor = MaterialTheme.colorScheme.primary,
-                    selectedDayContentColor = MaterialTheme.colorScheme.onPrimary
-                )
-            )
-        }
-    }
-
-    if (showDatePickerForWeek) {
-        val datePickerState = rememberDatePickerState()
-        DatePickerDialog(
-            onDismissRequest = { showDatePickerForWeek = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    datePickerState.selectedDateMillis?.let {
-                        viewModel.addSelectedWeek(it)
-                    }
-                    showDatePickerForWeek = false
-                }) {
-                    Text("OK", color = MaterialTheme.colorScheme.primary)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDatePickerForWeek = false }) {
-                    Text("Hủy", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-        ) {
-            DatePicker(
-                state = datePickerState,
-                colors = DatePickerDefaults.colors(
-                    titleContentColor = MaterialTheme.colorScheme.onSurface,
-                    headlineContentColor = MaterialTheme.colorScheme.onSurface,
-                    selectedDayContainerColor = MaterialTheme.colorScheme.primary,
-                    selectedDayContentColor = MaterialTheme.colorScheme.onPrimary
-                )
-            )
-        }
-    }
-
-    if (showMonthYearPicker) {
-        var tempYear by remember { mutableStateOf(Calendar.getInstance().get(Calendar.YEAR)) }
-        Dialog(onDismissRequest = { showMonthYearPicker = false }) {
-            Card(
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = SurfaceContainerHigh),
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(LocalAppStrings.current.selectMonthYear, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        IconButton(onClick = { tempYear-- }) {
-                            Icon(Icons.Default.ArrowBack, LocalAppStrings.current.prevYear, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            // --- Sub-Dialogs chọn mốc thời gian ---
+            if (showDatePickerForDay) {
+                val datePickerState = rememberDatePickerState()
+                DatePickerDialog(
+                    onDismissRequest = { showDatePickerForDay = false },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            datePickerState.selectedDateMillis?.let { viewModel.addSelectedDay(it) }
+                            showDatePickerForDay = false
+                        }) {
+                            Text("OK", color = MaterialTheme.colorScheme.primary)
                         }
-                        Text(tempYear.toString(), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
-                        IconButton(onClick = { tempYear++ }) {
-                            Icon(Icons.Default.ArrowForward, LocalAppStrings.current.nextYear, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showDatePickerForDay = false }) {
+                            Text("Hủy", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    val months = listOf(
-                        listOf(0, 1, 2),
-                        listOf(3, 4, 5),
-                        listOf(6, 7, 8),
-                        listOf(9, 10, 11)
+                ) {
+                    DatePicker(
+                        state = datePickerState,
+                        colors = DatePickerDefaults.colors(
+                            titleContentColor = MaterialTheme.colorScheme.onSurface,
+                            headlineContentColor = MaterialTheme.colorScheme.onSurface,
+                            selectedDayContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedDayContentColor = MaterialTheme.colorScheme.onPrimary
+                        )
                     )
-                    months.forEach { rowMonths ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            rowMonths.forEach { m ->
-                                Button(
-                                    onClick = {
-                                        viewModel.addSelectedMonth(m, tempYear)
-                                        showMonthYearPicker = false
-                                    },
-                                    modifier = Modifier.weight(1f).padding(vertical = 4.dp),
-                                    shape = RoundedCornerShape(8.dp),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                                        contentColor = MaterialTheme.colorScheme.primary
-                                    )
-                                ) {
-                                    Text("Th. ${m + 1}", style = MaterialTheme.typography.labelSmall)
-                                }
-                            }
+                }
+            }
+
+            if (showDatePickerForWeek) {
+                val datePickerState = rememberDatePickerState()
+                DatePickerDialog(
+                    onDismissRequest = { showDatePickerForWeek = false },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            datePickerState.selectedDateMillis?.let { viewModel.addSelectedWeek(it) }
+                            showDatePickerForWeek = false
+                        }) {
+                            Text("OK", color = MaterialTheme.colorScheme.primary)
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showDatePickerForWeek = false }) {
+                            Text("Hủy", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    TextButton(onClick = { showMonthYearPicker = false }) {
-                        Text("Hủy", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                ) {
+                    DatePicker(
+                        state = datePickerState,
+                        colors = DatePickerDefaults.colors(
+                            titleContentColor = MaterialTheme.colorScheme.onSurface,
+                            headlineContentColor = MaterialTheme.colorScheme.onSurface,
+                            selectedDayContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedDayContentColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    )
+                }
+            }
+
+            if (showMonthYearPicker) {
+                var tempYear by remember { mutableStateOf(Calendar.getInstance().get(Calendar.YEAR)) }
+                Dialog(onDismissRequest = { showMonthYearPicker = false }) {
+                    Card(
+                        shape = RoundedCornerShape(24.dp),
+                        colors = CardDefaults.cardColors(containerColor = SurfaceContainerHigh),
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(LocalAppStrings.current.selectMonthYear, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                IconButton(onClick = { tempYear-- }) {
+                                    Icon(Icons.Default.ArrowBack, LocalAppStrings.current.prevYear, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                Text(tempYear.toString(), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                                IconButton(onClick = { tempYear++ }) {
+                                    Icon(Icons.Default.ArrowForward, LocalAppStrings.current.nextYear, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            val months = listOf(
+                                listOf(0, 1, 2),
+                                listOf(3, 4, 5),
+                                listOf(6, 7, 8),
+                                listOf(9, 10, 11)
+                            )
+                            months.forEach { rowMonths ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    rowMonths.forEach { m ->
+                                        Button(
+                                            onClick = {
+                                                viewModel.addSelectedMonth(m, tempYear)
+                                                showMonthYearPicker = false
+                                            },
+                                            modifier = Modifier.weight(1f).padding(vertical = 4.dp),
+                                            shape = RoundedCornerShape(8.dp),
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                                contentColor = MaterialTheme.colorScheme.primary
+                                            )
+                                        ) {
+                                            Text("Th. ${m + 1}", style = MaterialTheme.typography.labelSmall)
+                                        }
+                                    }
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(16.dp))
+                            TextButton(onClick = { showMonthYearPicker = false }) {
+                                Text("Hủy", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
                     }
                 }
             }
-        }
-    }
 
-    if (showYearPicker) {
-        val currentYear = Calendar.getInstance().get(Calendar.YEAR)
-        val years = (currentYear - 5..currentYear + 2).toList()
-        Dialog(onDismissRequest = { showYearPicker = false }) {
-            Card(
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = SurfaceContainerHigh),
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(LocalAppStrings.current.selectYear, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    val chunkedYears = years.chunked(3)
-                    chunkedYears.forEach { rowYears ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            rowYears.forEach { y ->
-                                Button(
-                                    onClick = {
-                                        viewModel.addSelectedYear(y)
-                                        showYearPicker = false
-                                    },
-                                    modifier = Modifier.weight(1f).padding(vertical = 4.dp),
-                                    shape = RoundedCornerShape(8.dp),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                                        contentColor = MaterialTheme.colorScheme.primary
-                                    )
+            if (showYearPicker) {
+                val currentYear = Calendar.getInstance().get(Calendar.YEAR)
+                val years = (currentYear - 5..currentYear + 2).toList()
+                Dialog(onDismissRequest = { showYearPicker = false }) {
+                    Card(
+                        shape = RoundedCornerShape(24.dp),
+                        colors = CardDefaults.cardColors(containerColor = SurfaceContainerHigh),
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(LocalAppStrings.current.selectYear, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            val chunkedYears = years.chunked(3)
+                            chunkedYears.forEach { rowYears ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    Text(y.toString(), style = MaterialTheme.typography.labelSmall)
+                                    rowYears.forEach { y ->
+                                        Button(
+                                            onClick = {
+                                                viewModel.addSelectedYear(y)
+                                                showYearPicker = false
+                                            },
+                                            modifier = Modifier.weight(1f).padding(vertical = 4.dp),
+                                            shape = RoundedCornerShape(8.dp),
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                                contentColor = MaterialTheme.colorScheme.primary
+                                            )
+                                        ) {
+                                            Text(y.toString(), style = MaterialTheme.typography.labelSmall)
+                                        }
+                                    }
                                 }
                             }
+                            Spacer(modifier = Modifier.height(16.dp))
+                            TextButton(onClick = { showYearPicker = false }) {
+                                Text("Hủy", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
                         }
-                    }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    TextButton(onClick = { showYearPicker = false }) {
-                        Text("Hủy", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -1347,90 +1344,78 @@ private fun StatsSection(
     }
 }
 
-private fun isSameDay(time1: Long, time2: Long): Boolean {
-    val cal1 = Calendar.getInstance().apply { timeInMillis = time1 }
-    val cal2 = Calendar.getInstance().apply { timeInMillis = time2 }
+/** So sánh hai timestamp có cùng ngày không */
+private fun isSameDay(millis1: Long, millis2: Long): Boolean {
+    val cal1 = Calendar.getInstance().apply { timeInMillis = millis1 }
+    val cal2 = Calendar.getInstance().apply { timeInMillis = millis2 }
     return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
-           cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR)
+            cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR)
 }
 
+/**
+ * Hiển thị mã QR chuyển khoản ngân hàng.
+ */
 @Composable
 private fun QrCodeBox(
     account: BankAccount,
     themeColor: Color,
-    getBankShortName: (String) -> String,
-    modifier: Modifier = Modifier
+    getBankShortName: (String) -> String
 ) {
-    val bankShort = getBankShortName(account.bankName)
-    val qrUrl = "https://img.vietqr.io/image/${bankShort}-${account.accountNumber}-compact.png"
+    val bankShortName = getBankShortName(account.bankName)
+    val qrUrl = "https://img.vietqr.io/image/$bankShortName-${account.accountNumber}-compact.png"
 
-    Box(
-        modifier = modifier
+    Column(
+        modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            .background(themeColor.copy(alpha = 0.05f))
             .padding(16.dp),
-        contentAlignment = Alignment.Center
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(220.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color.White)
-                    .padding(8.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                SubcomposeAsyncImage(
-                    model = qrUrl,
-                    contentDescription = "VietQR",
-                    loading = {
-                        CircularProgressIndicator(
-                            color = themeColor,
-                            modifier = Modifier.size(32.dp)
-                        )
-                    },
-                    error = {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Warning,
-                                contentDescription = "Error",
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                            Text(
-                                text = "Lỗi tải mã QR",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        }
-                    },
-                    modifier = Modifier.fillMaxSize()
-                )
+        Text(
+            text = "Mã QR chuyển khoản",
+            style = MaterialTheme.typography.labelMedium,
+            color = themeColor,
+            fontWeight = FontWeight.Bold
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+        SubcomposeAsyncImage(
+            model = qrUrl,
+            contentDescription = "Mã QR chuyển khoản ${account.bankName}",
+            modifier = Modifier
+                .size(200.dp)
+                .clip(RoundedCornerShape(8.dp)),
+            loading = {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        color = themeColor,
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+            },
+            error = {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Không tải được mã QR",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
             }
-
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                Text(
-                    text = account.bankName.uppercase(),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = themeColor,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = account.accountNumber,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-        }
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "${account.bankName} - ${account.accountNumber}",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }

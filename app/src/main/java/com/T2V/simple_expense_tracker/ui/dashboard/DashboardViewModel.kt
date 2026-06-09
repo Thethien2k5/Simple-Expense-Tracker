@@ -19,6 +19,9 @@ enum class StatsTimePeriod { DAY, WEEK, MONTH, YEAR }
 /** Loại biểu đồ: chỉ Trụ và Đường */
 enum class ChartType { BAR, LINE }
 
+/** Chế độ xem thống kê: chỉ Thu / chỉ Chi / cả hai */
+enum class StatsViewMode { INCOME, EXPENSE, BOTH }
+
 /**
  * Trạng thái UI của Dashboard — chứa tất cả dữ liệu cần thiết để render 5 section.
  */
@@ -37,7 +40,8 @@ data class DashboardUiState(
     val selectedYears: List<Int> = getDefaultYears(),
     val selectedQrBankAccountId: Long? = null,
     val isTotalBalanceVisible: Boolean = false,
-    val visibleBankAccountIds: Set<Long> = emptySet()
+    val visibleBankAccountIds: Set<Long> = emptySet(),
+    val statsViewMode: StatsViewMode = StatsViewMode.BOTH
 ) {
     companion object {
         fun getDefaultDays(): List<Long> {
@@ -89,24 +93,24 @@ data class DashboardUiState(
 
     /** Giao dịch diễn ra trong ngày hôm nay (thay cho Giao dịch đã phân loại) */
     val recentTransactions: List<Transaction>
-        get() {
-            val todayStart = Calendar.getInstance().apply {
-                set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
-            }.timeInMillis
-            val todayEnd = todayStart + 86_400_000L
-            return allTransactions.filter { it.timestamp in todayStart until todayEnd }
-        }
+    get() {
+        val todayStart = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+        val todayEnd = todayStart + 86_400_000L
+        return allTransactions.filter { it.timestamp in todayStart until todayEnd }
+    }
 
     /** Giao dịch theo ngày được chọn */
     val dailyTransactions: List<Transaction>
-        get() {
-            val cal = Calendar.getInstance().apply { timeInMillis = selectedDate }
-            val dayStart = cal.apply {
-                set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
-            }.timeInMillis
-            val dayEnd = dayStart + 86_400_000L
-            return allTransactions.filter { it.timestamp in dayStart until dayEnd }
-        }
+    get() {
+        val cal = Calendar.getInstance().apply { timeInMillis = selectedDate }
+        val dayStart = cal.apply {
+            set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+        val dayEnd = dayStart + 86_400_000L
+        return allTransactions.filter { it.timestamp in dayStart until dayEnd }
+    }
 
     /** Tổng thu trong khoảng thời gian thống kê hiện tại */
     val statsIncome: Double
@@ -186,7 +190,7 @@ data class DashboardUiState(
                     val dayTransactions = allTransactions.filter { it.timestamp in startOfDay until (startOfDay + 86_400_000L) }
                     val income = dayTransactions.filter { it.amount > 0 }.sumOf { it.amount }
                     val expense = dayTransactions.filter { it.amount < 0 }.sumOf { kotlin.math.abs(it.amount) }
-                    BarChartData(label, income, expense)
+                    BarChartData(label, income, expense, transactions = dayTransactions)
                 }
             }
             StatsTimePeriod.WEEK -> {
@@ -197,7 +201,7 @@ data class DashboardUiState(
                     val weekTransactions = allTransactions.filter { it.timestamp in startOfWeek until (startOfWeek + 7 * 86_400_000L) }
                     val income = weekTransactions.filter { it.amount > 0 }.sumOf { it.amount }
                     val expense = weekTransactions.filter { it.amount < 0 }.sumOf { kotlin.math.abs(it.amount) }
-                    BarChartData(label, income, expense)
+                    BarChartData(label, income, expense, transactions = weekTransactions)
                 }
             }
             StatsTimePeriod.MONTH -> {
@@ -215,7 +219,7 @@ data class DashboardUiState(
                     val monthTransactions = allTransactions.filter { it.timestamp in start until end }
                     val income = monthTransactions.filter { it.amount > 0 }.sumOf { it.amount }
                     val expense = monthTransactions.filter { it.amount < 0 }.sumOf { kotlin.math.abs(it.amount) }
-                    BarChartData(label, income, expense)
+                    BarChartData(label, income, expense, transactions = monthTransactions)
                 }
             }
             StatsTimePeriod.YEAR -> {
@@ -233,7 +237,7 @@ data class DashboardUiState(
                     val yearTransactions = allTransactions.filter { it.timestamp in start until end }
                     val income = yearTransactions.filter { it.amount > 0 }.sumOf { it.amount }
                     val expense = yearTransactions.filter { it.amount < 0 }.sumOf { kotlin.math.abs(it.amount) }
-                    BarChartData(label, income, expense)
+                    BarChartData(label, income, expense, transactions = yearTransactions)
                 }
             }
         }
@@ -265,7 +269,6 @@ class DashboardViewModel @Inject constructor(
     }
 
     init {
-        // Kết hợp 2 luồng dữ liệu từ DB — khi bất kỳ nguồn nào thay đổi, UI tự cập nhật
         viewModelScope.launch {
             combine(
                 getBankAccountsUseCase(),
@@ -276,38 +279,30 @@ class DashboardViewModel @Inject constructor(
                     bankAccounts = accounts,
                     allTransactions = transactions
                 )
-            }.collect { state ->
-                _uiState.value = state
-            }
+            }.collect { state -> _uiState.value = state }
         }
     }
 
-    /** Thay đổi ngày được chọn trong bộ lọc "Danh sách chi tiết" */
     fun selectDate(timestamp: Long) {
         _uiState.update { it.copy(selectedDate = timestamp) }
     }
 
-    /** Thay đổi loại biểu đồ */
     fun selectChartType(type: ChartType) {
         _uiState.update { it.copy(chartType = type) }
     }
 
-    /** Thay đổi khoảng thời gian thống kê */
     fun selectTimePeriod(period: StatsTimePeriod) {
         _uiState.update { it.copy(statsTimePeriod = period) }
     }
 
-    /** Thay đổi tháng thống kê */
     fun selectMonth(month: Int) {
         _uiState.update { it.copy(selectedMonth = month) }
     }
 
-    /** Thay đổi năm thống kê */
     fun selectYear(year: Int) {
         _uiState.update { it.copy(selectedYear = year) }
     }
 
-    /** Thêm một ngày được chọn vào danh sách thống kê */
     fun addSelectedDay(timestamp: Long) {
         val cal = Calendar.getInstance().apply {
             timeInMillis = timestamp
@@ -321,14 +316,12 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
-    /** Xóa một ngày khỏi danh sách thống kê */
     fun removeSelectedDay(timestamp: Long) {
         _uiState.update { state ->
             state.copy(selectedDays = state.selectedDays.filter { it != timestamp })
         }
     }
 
-    /** Thêm một tuần được chọn vào danh sách thống kê */
     fun addSelectedWeek(timestamp: Long) {
         val cal = Calendar.getInstance().apply {
             timeInMillis = timestamp
@@ -343,14 +336,12 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
-    /** Xóa một tuần khỏi danh sách thống kê */
     fun removeSelectedWeek(timestamp: Long) {
         _uiState.update { state ->
             state.copy(selectedWeeks = state.selectedWeeks.filter { it != timestamp })
         }
     }
 
-    /** Thêm một tháng được chọn vào danh sách thống kê */
     fun addSelectedMonth(month: Int, year: Int) {
         _uiState.update { state ->
             val pair = Pair(month, year)
@@ -361,14 +352,12 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
-    /** Xóa một tháng khỏi danh sách thống kê */
     fun removeSelectedMonth(month: Int, year: Int) {
         _uiState.update { state ->
             state.copy(selectedMonths = state.selectedMonths.filter { it != Pair(month, year) })
         }
     }
 
-    /** Thêm một năm được chọn vào danh sách thống kê */
     fun addSelectedYear(year: Int) {
         _uiState.update { state ->
             if (!state.selectedYears.contains(year)) {
@@ -377,24 +366,20 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
-    /** Xóa một năm khỏi danh sách thống kê */
     fun removeSelectedYear(year: Int) {
         _uiState.update { state ->
             state.copy(selectedYears = state.selectedYears.filter { it != year })
         }
     }
 
-    /** Chọn tài khoản để hiển thị mã QR */
     fun selectQrBankAccount(accountId: Long?) {
         _uiState.update { it.copy(selectedQrBankAccountId = accountId) }
     }
 
-    /** Bật/tắt hiển thị tổng số dư */
     fun toggleTotalBalanceVisibility() {
         _uiState.update { it.copy(isTotalBalanceVisible = !it.isTotalBalanceVisible) }
     }
 
-    /** Bật/tắt hiển thị số dư của một tài khoản ngân hàng */
     fun toggleBankAccountVisibility(accountId: Long) {
         _uiState.update { state ->
             val current = state.visibleBankAccountIds
@@ -407,7 +392,6 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
-    /** Bật/tắt hiển thị số dư cho tất cả tài khoản ngân hàng */
     fun toggleAllBankAccountsVisibility(visible: Boolean) {
         _uiState.update { state ->
             state.copy(
@@ -418,5 +402,9 @@ class DashboardViewModel @Inject constructor(
                 }
             )
         }
+    }
+
+    fun selectStatsViewMode(mode: StatsViewMode) {
+        _uiState.update { it.copy(statsViewMode = mode) }
     }
 }

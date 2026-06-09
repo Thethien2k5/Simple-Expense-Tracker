@@ -6,6 +6,9 @@
 
 - **Tự động bắt thông báo:** Sử dụng `BankNotificationListenerService` lắng nghe biến động số dư từ các ứng dụng ngân hàng/ví điện tử (Vietcombank, Techcombank, MB Bank, TNEX, Momo, v.v.).
 - **Phân tích thông minh:** Bộ phân tích (Parser) linh hoạt bằng Regex đọc trực tiếp từ JSON, hỗ trợ cập nhật động cấu hình nhận diện ngân hàng mà không cần build lại app.
+- **Bảo mật sinh trắc học:** Bảo mật truy cập ứng dụng bằng vân tay hoặc mật khẩu thiết bị (Biometric Authentication), tích hợp màn hình khóa bảo vệ quyền riêng tư dữ liệu tài chính.
+- **Ẩn số dư tài khoản:** Cho phép ẩn/hiện số dư tổng và số dư từng ngân hàng trên Dashboard bằng hiệu ứng chuyển động Shimmer Dots mượt mà, bảo vệ thông tin nhạy cảm ở nơi công cộng.
+- **Tích hợp mã QR thanh toán:** Tự động tạo và hiển thị mã VietQR động theo từng tài khoản ngân hàng của bạn để người khác chuyển khoản nhanh chóng.
 - **Quản lý đa tài khoản:** Hỗ trợ thống kê giao dịch theo từng tài khoản ngân hàng riêng biệt.
 - **Hoàn toàn Offline & Bảo mật:** Dữ liệu giao dịch được lưu hoàn toàn trên bộ nhớ thiết bị của bạn thông qua Room Database. Không có bất kỳ kết nối gửi dữ liệu nào lên server (No Backend) để bảo vệ tính riêng tư.
 - **Giao diện hiện đại & mượt mà:**
@@ -20,6 +23,8 @@
 - **Kiến trúc:** Clean Architecture + MVVM
 - **UI Framework:** Jetpack Compose (100%)
 - **Dependency Injection:** Dagger Hilt
+- **Bảo mật hệ thống:** Biometric Prompt SDK (Vân tay/Mật khẩu thiết bị)
+- **Tải ảnh động:** Coil (Tải mã QR trực tuyến từ VietQR)
 - **Local Storage:** Room Database (Lưu trữ giao dịch), DataStore Preferences (Cài đặt, Ngôn ngữ, Theme)
 - **Background Processing:** NotificationListenerService
 - **Asynchronous Programming:** Coroutines & StateFlow
@@ -31,23 +36,32 @@ Dự án tuân theo mô hình **Clean Architecture** để đảm bảo tính ph
 - `di/`: Các Module Dependency Injection bằng Hilt cung cấp App, DB, DataStore, Repository.
 - `data/`: Tầng dữ liệu chứa Local Database (Room), DAOs, Entity, Mapper và Repository Implementations.
 - `domain/`: Tầng nghiệp vụ cốt lõi chứa Domain Models, UseCases, Interfaces, cấu hình hệ thống (`ConfigManager`) và `NotificationParser`.
-- `ui/`: Tầng giao diện chứa các thành phần Compose UI (Dashboard, Ledger, Notification, Settings, Theme).
+- `ui/`: Tầng giao diện chứa các thành phần Compose UI (Dashboard, Ledger, Notification, Settings, Theme, Bảo mật sinh trắc học).
 - `service/`: Tầng Background Service chạy ngầm bắt và xử lý thông báo.
+
+### 📊 Hệ thống Sơ đồ Thiết kế (Draw.io)
+Tài liệu thiết kế chi tiết của dự án được lưu trữ trong thư mục [drawio/](file:///f:/DATTCNPM/Simple-Expense-Tracker/drawio):
+- 📐 [Sơ đồ Kiến trúc (kientruc.drawio)](file:///f:/DATTCNPM/Simple-Expense-Tracker/drawio/kientruc.drawio): Luồng tương tác giữa các tầng Presentation (với `LockScreen`), Domain, Data và Background Service.
+- 📐 [Sơ đồ Lớp (class.drawio)](file:///f:/DATTCNPM/Simple-Expense-Tracker/drawio/class.drawio): Cấu trúc chi tiết các Class, Interfaces, ViewModels, UseCases, Entities và mối quan hệ phụ thuộc giữa chúng.
+- 📐 [Sơ đồ Use Case (usecase.drawio)](file:///f:/DATTCNPM/Simple-Expense-Tracker/drawio/usecase.drawio): Các ca sử dụng chính của hệ thống phân chia rõ ràng tương tác của `Người dùng` và `Hệ điều hành Android`.
 
 ## 🔄 Sơ đồ Luồng (Flow Diagrams)
 
 ```mermaid
 graph TD
     subgraph UI_Layer ["UI Layer (Tầng Giao Diện)"]
-        DashboardScreen["DashboardScreen (Màn hình chính)"] --> DashboardViewModel["DashboardViewModel"]
+        MainActivity["MainActivity (Khởi chạy & Bảo mật)"] --> LockScreen["LockScreen (Màn hình khóa)"]
+        MainActivity --> DashboardScreen["DashboardScreen (Màn hình chính)"]
+        DashboardScreen --> DashboardViewModel["DashboardViewModel"]
         LedgerScreen["LedgerScreen (Sổ thu chi)"] --> LedgerViewModel["LedgerViewModel"]
     end
     subgraph Domain_Layer ["Domain Layer (Tầng Nghiệp Vụ)"]
         DashboardViewModel --> GetTransactionsUseCase["GetTransactionsUseCase (Lấy giao dịch)"]
         DashboardViewModel --> GetBankAccountsUseCase["GetBankAccountsUseCase (Lấy TK)"]
+        DashboardViewModel --> NotificationParser["NotificationParser (Lấy mã viết tắt QR)"]
         GetTransactionsUseCase --> TransactionRepository["TransactionRepository (Interface)"]
         GetBankAccountsUseCase --> BankAccountRepository["BankAccountRepository (Interface)"]
-        BankNotificationListenerService["BankNotificationListenerService (Lắng nghe TB)"] --> NotificationParser["NotificationParser (Phân tích TB)"]
+        BankNotificationListenerService["BankNotificationListenerService (Lắng nghe TB)"] --> NotificationParser
     end
     subgraph Data_Layer ["Data Layer (Tầng Dữ Liệu)"]
         TransactionRepository -.-> TransactionRepositoryImpl["TransactionRepositoryImpl (Thực thi)"]
@@ -127,7 +141,12 @@ erDiagram
 - [x] Cài đặt `BankNotificationListenerService` & parser tự động sử dụng Regex.
 - [x] Cơ chế cấu hình Parser động thông qua `ConfigManager` lưu trữ JSON.
 - [x] Quản lý Đa ngôn ngữ và Theme bằng `CompositionLocal`.
-- [x] Tích hợp tính năng tự động chuẩn hóa Unicode khi quét Regex. 
+- [x] Tích hợp tính năng tự động chuẩn hóa Unicode khi quét Regex.
+- [x] Tích hợp mã VietQR động theo từng tài khoản ngân hàng.
+- [x] Bảo mật bằng vân tay/mật khẩu qua BiometricPrompt & màn hình LockScreen.
+- [x] Tính năng ẩn/hiện số dư (số dư tổng và số dư từng tài khoản) bằng Shimmer Dots.
+- [x] Vẽ và cập nhật đồng bộ 3 sơ đồ thiết kế chi tiết (kientruc.drawio, class.drawio, usecase.drawio).
+- [x] Tinh chỉnh và chuẩn hóa toàn bộ các dây liên kết bị sai lệch trong sơ đồ Class.
 - [ ] Tích hợp AI (Gemini Nano hoặc LLM nhẹ) vào `NotificationParser` để tự động bóc tách nội dung giao dịch thông minh hơn nếu Regex truyền thống thất bại. *(Phương án này đã bị loại bỏ trong quá trình phát triển)*
 
 

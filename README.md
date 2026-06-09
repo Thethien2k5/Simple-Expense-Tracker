@@ -147,6 +147,7 @@ erDiagram
 - [x] Tính năng ẩn/hiện số dư (số dư tổng và số dư từng tài khoản) bằng Shimmer Dots.
 - [x] Vẽ và cập nhật đồng bộ 3 sơ đồ thiết kế chi tiết (kientruc.drawio, class.drawio, usecase.drawio).
 - [x] Tinh chỉnh và chuẩn hóa toàn bộ các dây liên kết bị sai lệch trong sơ đồ Class.
+- [x] Tích hợp Google Play In-App Updates API (Immediate Update).
 - [ ] Tích hợp AI (Gemini Nano hoặc LLM nhẹ) vào `NotificationParser` để tự động bóc tách nội dung giao dịch thông minh hơn nếu Regex truyền thống thất bại. *(Phương án này đã bị loại bỏ trong quá trình phát triển)*
 
 

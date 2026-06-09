@@ -51,6 +51,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.first
 import com.T2V.simple_expense_tracker.util.LocaleHelper
 import  com.T2V.simple_expense_tracker.domain.repository.LanguageRepository
+import com.google.android.play.core.appupdate.AppUpdateManager
+import com.google.android.play.core.appupdate.AppUpdateManagerFactory
+import com.google.android.play.core.install.model.AppUpdateType
+import com.google.android.play.core.install.model.UpdateAvailability
 
 @AndroidEntryPoint
 class MainActivity : androidx.fragment.app.FragmentActivity() {
@@ -60,6 +64,8 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
     lateinit var languageRepository: LanguageRepository
 
     private val isDeviceUnlocked = mutableStateOf(false)
+    private lateinit var appUpdateManager: AppUpdateManager
+    private val updateRequestCode = 9902
 
     private fun showBiometricPrompt() {
         val biometricManager = BiometricManager.from(this)
@@ -102,6 +108,18 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
         if (!isDeviceUnlocked.value) {
             showBiometricPrompt()
         }
+        if (::appUpdateManager.isInitialized) {
+            appUpdateManager.appUpdateInfo.addOnSuccessListener { appUpdateInfo ->
+                if (appUpdateInfo.updateAvailability() == UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS) {
+                    appUpdateManager.startUpdateFlowForResult(
+                        appUpdateInfo,
+                        AppUpdateType.IMMEDIATE,
+                        this,
+                        updateRequestCode
+                    )
+                }
+            }
+        }
     }
 
     override fun onStop() {
@@ -109,8 +127,27 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
         isDeviceUnlocked.value = false
     }
 
+    private fun checkNewUpdateAvailability() {
+        val appUpdateInfoTask = appUpdateManager.appUpdateInfo
+        appUpdateInfoTask.addOnSuccessListener { appUpdateInfo ->
+            if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE
+                && appUpdateInfo.isUpdateTypeAllowed(AppUpdateType.IMMEDIATE)
+            ) {
+                appUpdateManager.startUpdateFlowForResult(
+                    appUpdateInfo,
+                    AppUpdateType.IMMEDIATE,
+                    this,
+                    updateRequestCode
+                )
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        appUpdateManager = AppUpdateManagerFactory.create(this)
+        checkNewUpdateAvailability()
 
         // Áp dụng ngôn ngữ đã lưu trước khi setContent
         kotlinx.coroutines.runBlocking {

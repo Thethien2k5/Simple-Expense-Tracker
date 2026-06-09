@@ -400,38 +400,6 @@
           "(?:tai|tại|tu|từ)\\s+(.+?)(?:\\.\\s*ND|\\s+ND|$)"
         ]
       }
-    },
-    {
-      "name": "Momo",
-      "shortName": "momo",
-      "color": "#E11880",
-      "packageKeywords": [
-        "momo",
-        "mservice"
-      ],
-      "titleKeywords": [
-        "momo"
-      ],
-      "parserConfig": {
-        "amountPatterns": [
-          {
-            "pattern": "(?:GD|giao dich)\\s*:?\\s*([\\+\\-])\\s*([0-9.,]+)\\s*(?:VND|đ|d|vnd|Vnd)",
-            "type": "sign_amount",
-            "signGroup": 1,
-            "amountGroup": 2
-          }
-        ],
-        "accountPatterns": [],
-        "contentPatterns": [
-          "(?:ND|noi dung)\\s*:?\\s*(.+?)(?:\\.|$)"
-        ],
-        "balancePatterns": [
-          "(?:SD|so du)\\s*:?\\s*([0-9.,]+)"
-        ],
-        "transferPatterns": [
-          "(?:tai|tại|tu|từ)\\s+(.+?)(?:\\.\\s*ND|\\s+ND|$)"
-        ]
-      }
     }
   ],
   "globalParserConfig": {

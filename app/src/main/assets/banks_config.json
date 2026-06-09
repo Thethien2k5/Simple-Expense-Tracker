@@ -108,110 +108,6 @@
       }
     },
     {
-      "name": "Techcombank",
-      "shortName": "techcombank",
-      "color": "#E53935",
-      "packageKeywords": [
-        "tcb",
-        "techcombank"
-      ],
-      "titleKeywords": [
-        "techcombank",
-        "tcb"
-      ],
-      "parserConfig": {
-        "amountPatterns": [
-          {
-            "pattern": "([\\+\\-])\\s*([0-9.,]+)\\s*(?:VND|đ|d|vnd)",
-            "type": "sign_amount",
-            "signGroup": 1,
-            "amountGroup": 2
-          }
-        ],
-        "accountPatterns": [
-          "(?:TK|tai khoan)\\s*:?\\s*([0-9xX]+)"
-        ],
-        "contentPatterns": [
-          "(?:ND|noi dung)\\s*:?\\s*(.+?)(?:\\.|$)"
-        ],
-        "balancePatterns": [
-          "(?:SD|so du)\\s*:?\\s*([0-9.,]+)"
-        ],
-        "transferPatterns": [
-          "(?:tai|tại|tu|từ)\\s+(.+?)(?:\\.\\s*ND|\\s+ND|$)"
-        ]
-      }
-    },
-    {
-      "name": "MB Bank",
-      "shortName": "mbbank",
-      "color": "#1E88E5",
-      "packageKeywords": [
-        "mbmobile",
-        "mbbank"
-      ],
-      "titleKeywords": [
-        "mb bank",
-        "mbbank"
-      ],
-      "parserConfig": {
-        "amountPatterns": [
-          {
-            "pattern": "([\\+\\-])\\s*([0-9.,]+)\\s*(?:VND|đ|d|vnd)",
-            "type": "sign_amount",
-            "signGroup": 1,
-            "amountGroup": 2
-          }
-        ],
-        "accountPatterns": [
-          "(?:TK|tai khoan)\\s*:?\\s*([0-9xX]+)"
-        ],
-        "contentPatterns": [
-          "(?:ND|noi dung)\\s*:?\\s*(.+?)(?:\\.|$)"
-        ],
-        "balancePatterns": [
-          "(?:SD|so du)\\s*:?\\s*([0-9.,]+)"
-        ],
-        "transferPatterns": [
-          "(?:tai|tại|tu|từ)\\s+(.+?)(?:\\.\\s*ND|\\s+ND|$)"
-        ]
-      }
-    },
-    {
-      "name": "TPBank",
-      "shortName": "tpbank",
-      "color": "#8E24AA",
-      "packageKeywords": [
-        "tpbank"
-      ],
-      "titleKeywords": [
-        "tpbank",
-        "tpb"
-      ],
-      "parserConfig": {
-        "amountPatterns": [
-          {
-            "pattern": "([\\+\\-])\\s*([0-9.,]+)\\s*(?:VND|đ|d|vnd)",
-            "type": "sign_amount",
-            "signGroup": 1,
-            "amountGroup": 2
-          }
-        ],
-        "accountPatterns": [
-          "(?:TK|tai khoan)\\s*:?\\s*([0-9xX]+)"
-        ],
-        "contentPatterns": [
-          "(?:ND|noi dung)\\s*:?\\s*(.+?)(?:\\.|$)"
-        ],
-        "balancePatterns": [
-          "(?:SD|so du)\\s*:?\\s*([0-9.,]+)"
-        ],
-        "transferPatterns": [
-          "(?:tai|tại|tu|từ)\\s+(.+?)(?:\\.\\s*ND|\\s+ND|$)"
-        ]
-      }
-    },
-    {
       "name": "BIDV",
       "shortName": "bidv",
       "color": "#0D47A1",
@@ -249,114 +145,6 @@
           "(?:tai|tại|tu|từ)\\s+(.+?)(?:\\.\\s*ND|\\s+ND|$)"
         ]
       }
-    },
-    {
-      "name": "VPBank",
-      "shortName": "vpbank",
-      "color": "#2E7D32",
-      "packageKeywords": [
-        "vpb",
-        "vpbank"
-      ],
-      "titleKeywords": [
-        "vpbank",
-        "vp bank"
-      ],
-      "parserConfig": {
-        "amountPatterns": [
-          {
-            "pattern": "([\\+\\-])\\s*([0-9.,]+)\\s*(?:VND|đ|d|vnd)",
-            "type": "sign_amount",
-            "signGroup": 1,
-            "amountGroup": 2
-          }
-        ],
-        "accountPatterns": [
-          "(?:TK|tai khoan)\\s*:?\\s*([0-9xX]+)"
-        ],
-        "contentPatterns": [
-          "(?:ND|noi dung)\\s*:?\\s*(.+?)(?:\\.|$)"
-        ],
-        "balancePatterns": [
-          "(?:SD|so du)\\s*:?\\s*([0-9.,]+)"
-        ],
-        "transferPatterns": [
-          "(?:tai|tại|tu|từ)\\s+(.+?)(?:\\.\\s*ND|\\s+ND|$)"
-        ]
-      }
-    },
-    {
-      "name": "Cake by VPBank",
-      "shortName": "cake",
-      "color": "#EC407A",
-      "packageKeywords": [
-        "cake"
-      ],
-      "titleKeywords": [
-        "cake"
-      ],
-      "parserConfig": {
-        "amountPatterns": [
-          {
-            "pattern": "vừa tăng\\s*([0-9.,]+)\\s*(?:đ|d|vnd|VNĐ)?",
-            "type": "fixed_income",
-            "amountGroup": 1
-          },
-          {
-            "pattern": "vừa giảm\\s*([0-9.,]+)\\s*(?:đ|d|vnd|VNĐ)?",
-            "type": "fixed_expense",
-            "amountGroup": 1
-          }
-        ],
-        "accountPatterns": [
-          "(?:TK|tài khoản|tai khoan)\\s*[:\\-]?\\s*([0-9xX]+)"
-        ],
-        "contentPatterns": [
-          "(?:\\bND\\b|nội dung|noi dung)\\s*[:\\-]?\\s*(.+?)(?:\\s*(?:Số dư hiện tại|SD|so du|số dư)|\\.|\\z)"
-        ],
-        "balancePatterns": [
-          "(?:Số dư hiện tại|số dư cuối|SD|so du)\\s*(?:của tài khoản thanh toán)?\\s*(?:là|:)?\\s*([0-9.,]+)"
-        ],
-        "transferPatterns": [
-          "([A-Za-z\\s]+?)\\s+chuyen\\s+tien"
-        ]
-      }
-    },
-    {
-      "name": "Sacombank",
-      "shortName": "sacombank",
-      "color": "#0288D1",
-      "packageKeywords": [
-        "sacombank"
-      ],
-      "titleKeywords": [
-        "sacombank"
-      ],
-      "parserConfig": null
-    },
-    {
-      "name": "ACB",
-      "shortName": "acb",
-      "color": "#0091EA",
-      "packageKeywords": [
-        "acb"
-      ],
-      "titleKeywords": [
-        "acb"
-      ],
-      "parserConfig": null
-    },
-    {
-      "name": "MSB",
-      "shortName": "msb",
-      "color": "#7E57C2",
-      "packageKeywords": [
-        "msb"
-      ],
-      "titleKeywords": [
-        "msb"
-      ],
-      "parserConfig": null
     },
     {
       "name": "TNEX",
@@ -402,55 +190,343 @@
       }
     },
     {
-      "name": "Momo",
-      "shortName": "momo",
-      "color": "#E11880",
+      "name": "Techcombank",
+      "shortName": "techcombank",
+      "color": "#E53935",
       "packageKeywords": [
-        "momo",
-        "mservice"
+        "tcb",
+        "techcombank"
       ],
       "titleKeywords": [
-        "momo"
+        "techcombank",
+        "tcb"
       ],
       "parserConfig": {
         "amountPatterns": [
           {
-            "pattern": "(?:GD|giao dich)\\s*:?\\s*([\\+\\-])\\s*([0-9.,]+)\\s*(?:VND|đ|d|vnd|Vnd|₫)",
+            "pattern": "(?:So tien GD|Số tiền GD)\\s*:\\s*([\\+\\-])\\s*([0-9.,]+)",
             "type": "sign_amount",
             "signGroup": 1,
             "amountGroup": 2
           },
           {
-            "pattern": "(?:Số tiền|So tien)\\s*([0-9.,]+)\\s*(?:đ|d|VND|vnd|₫)?\\s*,\\s*(?:kèm lời|kem loi)",
-            "type": "fixed_income",
-            "amountGroup": 1
-          },
-          {
-            "pattern": "(?:Số tiền|So tien)\\s*([\\+\\-]?)\\s*([0-9.,]+)\\s*(?:đ|d|VND|vnd|₫)?",
+            "pattern": "([\\+\\-])\\s*([0-9.,]+)\\s*(?:VND|đ|d|vnd|Vnd|₫)?",
             "type": "sign_amount",
             "signGroup": 1,
             "amountGroup": 2
-          },
-          {
-            "pattern": "([0-9.,]+)\\s*(?:đ|d|VND|vnd|₫)",
-            "type": "raw_amount",
-            "amountGroup": 1
           }
         ],
-        "accountPatterns": [],
+        "accountPatterns": [
+          "(?:TK|tai khoan|tài khoản)\\s*[:\\-]?\\s*([0-9xX]+)"
+        ],
         "contentPatterns": [
-          "(?:ND|noi dung|lời nhắn|loi nhan)\\s*:?\\s*[\"']?([^\"']+)[\"']?",
-          "(?:ND|noi dung)\\s*:?\\s*(.+?)(?:\\.|$)"
+          "(?:\\bND\\b|noi dung|nội dung)\\s*[:\\-]?\\s*(.+?)(?:\\s+(?:SD|So du|Số dư|s[oố]\\s*d[uư])|\\.|\\z)",
+          "(?:So dư|Số dư|so du|SD)\\s*:\\s*[0-9.,]+\\s+(.+?)(?:\\.|\\z)"
         ],
         "balancePatterns": [
-          "(?:SD|so du)\\s*:?\\s*([0-9.,]+)"
+          "(?:So dư|Số dư|so du|SD)\\s*:\\s*([0-9][0-9.,]*)"
         ],
         "transferPatterns": [
           "(?:tai|tại|tu|từ)\\s+(.+?)(?:\\.\\s*ND|\\s+ND|$)"
         ]
       }
+    },
+    {
+      "name": "MB Bank",
+      "shortName": "mbbank",
+      "color": "#1E88E5",
+      "packageKeywords": [
+        "mbmobile",
+        "mbbank"
+      ],
+      "titleKeywords": [
+        "mb bank",
+        "mbbank"
+      ],
+      "parserConfig": {
+        "amountPatterns": [
+          {
+            "pattern": "(?:GD)\\s*:\\s*([\\+\\-])\\s*([0-9.,]+)\\s*(?:VND|đ|d|vnd|Vnd|₫)?",
+            "type": "sign_amount",
+            "signGroup": 1,
+            "amountGroup": 2
+          },
+          {
+            "pattern": "([\\+\\-])\\s*([0-9.,]+)\\s*(?:VND|đ|d|vnd|Vnd|₫)?",
+            "type": "sign_amount",
+            "signGroup": 1,
+            "amountGroup": 2
+          }
+        ],
+        "accountPatterns": [
+          "(?:TK|tai khoan|tài khoản)\\s*[:\\-]?\\s*([0-9xX]+)"
+        ],
+        "contentPatterns": [
+          "(?:\\bND\\b|noi dung|nội dung)\\s*[:\\-]?\\s*(.+?)(?:\\||\\.|\\z)"
+        ],
+        "balancePatterns": [
+          "(?:SD|so du|số dư)\\s*[:\\-]?\\s*([0-9][0-9.,]*)"
+        ],
+        "transferPatterns": [
+          "(?:tai|tại|tu|từ)\\s+(.+?)(?:\\.\\s*ND|\\s+ND|$)"
+        ]
+      }
+    },
+    {
+      "name": "TPBank",
+      "shortName": "tpbank",
+      "color": "#8E24AA",
+      "packageKeywords": [
+        "tpbank"
+      ],
+      "titleKeywords": [
+        "tpbank",
+        "tpb"
+      ],
+      "parserConfig": {
+        "amountPatterns": [
+          {
+            "pattern": "(?:chuyển tiền|chuyen tien|trừ|tru|giao dịch trừ)\\s+.*?số tiền\\s*([0-9.,]+)",
+            "type": "fixed_expense",
+            "amountGroup": 1
+          },
+          {
+            "pattern": "(?:nhận được|nhan duoc|cộng|cong|giao dịch cộng)\\s+.*?số tiền\\s*([0-9.,]+)",
+            "type": "fixed_income",
+            "amountGroup": 1
+          },
+          {
+            "pattern": "(?:số tiền|so tien)\\s*([0-9.,]+)",
+            "type": "raw_amount",
+            "amountGroup": 1
+          }
+        ],
+        "accountPatterns": [
+          "(?:số tài khoản|so tai khoan|TK)\\s*[:\\-]?\\s*([0-9xX*]+)"
+        ],
+        "contentPatterns": [
+          "(?:nội dung|noi dung)\\s*:\\s*(.+?)(?:\"?\\s*,\\s*(?:Số dư|So du)|\\.|\\z)"
+        ],
+        "balancePatterns": [
+          "(?:Số dư hiện tại|số dư cuối|SD|so du)\\s*([0-9][0-9.,]*)"
+        ],
+        "transferPatterns": [
+          "(?:chuyển tiền tới|chuyen tien toi|từ|tu)\\s+([A-Za-z0-9\\s]{3,30}?)(?:\\s*,|\\s+số tài khoản|\\s+so tai khoan|$)"
+        ]
+      }
+    },
+    {
+      "name": "VPBank",
+      "shortName": "vpbank",
+      "color": "#2E7D32",
+      "packageKeywords": [
+        "vpb",
+        "vpbank"
+      ],
+      "titleKeywords": [
+        "vpbank",
+        "vp bank"
+      ],
+      "parserConfig": {
+        "amountPatterns": [
+          {
+            "pattern": "(?:giam|giảm|trừ|tru)\\s*([0-9.,]+)\\s*(?:VND|đ|d|vnd|Vnd|₫)?",
+            "type": "fixed_expense",
+            "amountGroup": 1
+          },
+          {
+            "pattern": "(?:tang|tăng|cong|cộng|nhận|nhan)\\s*([0-9.,]+)\\s*(?:VND|đ|d|vnd|Vnd|₫)?",
+            "type": "fixed_income",
+            "amountGroup": 1
+          },
+          {
+            "pattern": "(?:GD|giao dịch)\\s*([\\+\\-])\\s*([0-9.,]+)",
+            "type": "sign_amount",
+            "signGroup": 1,
+            "amountGroup": 2
+          }
+        ],
+        "accountPatterns": [
+          "(?:TK|tai khoan|tài khoản|so tk)\\s*[:\\-]?\\s*([0-9xX]+)"
+        ],
+        "contentPatterns": [
+          "(?:giam|giảm|tang|tăng|cộng|nhận|trừ)\\s*[0-9.,]+\\s*(?:VND|đ|d|vnd|Vnd)?\\s+(?:do|tai|tại)?\\s*(.+?)(?:\\s*(?:So du TK sau GD la|So du|Số dư)|\\.|\\z)"
+        ],
+        "balancePatterns": [
+          "(?:So du TK sau GD la|số dư sau GD|SD|so du)\\s*(?:la|:)?\\s*([0-9][0-9.,]*)"
+        ],
+        "transferPatterns": [
+          "(?:tai|tại|tu|từ)\\s+(.+?)(?:\\.\\s*ND|\\s+ND|$)"
+        ]
+      }
+    },
+    {
+      "name": "Agribank",
+      "shortName": "agribank",
+      "color": "#C62828",
+      "packageKeywords": [
+        "agribank",
+        "vanguard.agribank"
+      ],
+      "titleKeywords": [
+        "agribank"
+      ],
+      "parserConfig": {
+        "amountPatterns": [
+          {
+            "pattern": "(?:TK\\s*[0-9xX*]+\\s*:\\s*)([\\+\\-])\\s*([0-9.,]+)",
+            "type": "sign_amount",
+            "signGroup": 1,
+            "amountGroup": 2
+          },
+          {
+            "pattern": "([\\+\\-])\\s*([0-9.,]+)\\s*(?:VND|đ|d|vnd|Vnd|₫)?",
+            "type": "sign_amount",
+            "signGroup": 1,
+            "amountGroup": 2
+          }
+        ],
+        "accountPatterns": [
+          "(?:TK|tai khoan|tài khoản)\\s*[:\\-]?\\s*([0-9xX*]{6,})"
+        ],
+        "contentPatterns": [
+          "\\((.+?)\\)",
+          "(?:\\bND\\b|noi dung|nội dung)\\s*[:\\-]?\\s*(.+?)(?:\\s+(?:SD|So du|Số dư|s[oố]\\s*d[uư])|\\.|\\z)"
+        ],
+        "balancePatterns": [
+          "(?:SD|so du|số dư)\\s*[:\\-]?\\s*([0-9][0-9.,]*)"
+        ],
+        "transferPatterns": [
+          "(?:tai|tại|tu|từ)\\s+(.+?)(?:\\.\\s*ND|\\s+ND|$)"
+        ]
+      }
+    },
+    {
+      "name": "Sacombank",
+      "shortName": "sacombank",
+      "color": "#0288D1",
+      "packageKeywords": [
+        "sacombank"
+      ],
+      "titleKeywords": [
+        "sacombank"
+      ],
+      "parserConfig": {
+        "amountPatterns": [
+          {
+            "pattern": "(?:rut|rút|trừ|tru|chuyển|chuyen|giam|giảm)\\s+([0-9.,]+)\\s*(?:VND|đ|d|vnd|₫)?",
+            "type": "fixed_expense",
+            "amountGroup": 1
+          },
+          {
+            "pattern": "(?:nhận|nhan|nhan được|nhận được|cộng|cong|tăng|tang)\\s+([0-9.,]+)\\s*(?:VND|đ|d|vnd|₫)?",
+            "type": "fixed_income",
+            "amountGroup": 1
+          },
+          {
+            "pattern": "([\\+\\-])\\s*([0-9.,]+)",
+            "type": "sign_amount",
+            "signGroup": 1,
+            "amountGroup": 2
+          }
+        ],
+        "accountPatterns": [
+          "(?:TK|tai khoan|tài khoản)\\s*[:\\-]?\\s*([0-9xX]+)"
+        ],
+        "contentPatterns": [
+          "(?:TK\\s*[0-9xX*]+\\s+)(.+?)(?:-So du kha dung|-So du|-Số dư|\\.|\\z)",
+          "(?:\\bND\\b|noi dung|nội dung)\\s*[:\\-]?\\s*(.+?)(?:\\s+(?:SD|So du|Số dư|s[oố]\\s*d[uư])|\\.|\\z)"
+        ],
+        "balancePatterns": [
+          "(?:So du kha dung|số dư khả dụng|SD|so du)\\s*[:\\-]?\\s*([0-9][0-9.,]*)"
+        ],
+        "transferPatterns": [
+          "(?:tai|tại|tu|từ)\\s+(.+?)(?:\\.\\s*ND|\\s+ND|$)"
+        ]
+      }
+    },
+    {
+      "name": "ACB",
+      "shortName": "acb",
+      "color": "#0091EA",
+      "packageKeywords": [
+        "acb"
+      ],
+      "titleKeywords": [
+        "acb"
+      ],
+      "parserConfig": {
+        "amountPatterns": [
+          {
+            "pattern": "(?:TK\\s*[0-9xX*]+\\s*\\(VND\\)\\s*)([\\+\\-])\\s*([0-9.,]+)",
+            "type": "sign_amount",
+            "signGroup": 1,
+            "amountGroup": 2
+          },
+          {
+            "pattern": "([\\+\\-])\\s*([0-9.,]+)(?!\\s*%)\\s*(?:VND|đ|d|vnd|Vnd)?",
+            "type": "sign_amount",
+            "signGroup": 1,
+            "amountGroup": 2
+          }
+        ],
+        "accountPatterns": [
+          "(?:TK)\\s*([0-9xX*]{6,})"
+        ],
+        "contentPatterns": [
+          "(?:GD|gd)\\s*:\\s*(.+?)(?:\\s+(?:SD|So du|Số dư)|\\.|\\z)"
+        ],
+        "balancePatterns": [
+          "(?:So du|Số dư|SD|so du)\\s*([0-9][0-9.,]*)"
+        ],
+        "transferPatterns": [
+          "(?:tai|tại|tu|từ)\\s+(.+?)(?:\\.\\s*ND|\\s+ND|$)"
+        ]
+      }
+    },
+    {
+      "name": "MSB",
+      "shortName": "msb",
+      "color": "#7E57C2",
+      "packageKeywords": [
+        "msb",
+        "com.msb.smartbanking"
+      ],
+      "titleKeywords": [
+        "msb",
+        "ngan hang hang hai"
+      ],
+      "parserConfig": {
+        "amountPatterns": [
+          {
+            "pattern": "\\(([\\+\\-])\\)\\s*([0-9.,]+)(?!\\s*%)",
+            "type": "sign_amount",
+            "signGroup": 1,
+            "amountGroup": 2
+          },
+          {
+            "pattern": "([\\+\\-])\\s*([0-9.,]+)(?!\\s*%)\\s*(?:VND|VNĐ|đ|d|vnd)?",
+            "type": "sign_amount",
+            "signGroup": 1,
+            "amountGroup": 2
+          }
+        ],
+        "accountPatterns": [
+          "(?:TK)\\s*([0-9xX*]{6,})"
+        ],
+        "contentPatterns": [
+          "(?:\\bND\\b|noi dung|nội dung)\\s*:?\\s*(.+?)(?:\\s+(?:SD|So du|Số dư|s[oố]\\s*d[uư])|\\.|\\z)"
+        ],
+        "balancePatterns": [
+          "(?:SD|so du|số dư|s[oố]\\s*d[uư])\\s*[:\\-]?\\s*([0-9][0-9.,]+)\\s*(?:VND|VNĐ|đ|d|vnd)?"
+        ],
+        "transferPatterns": [
+          "(?:ND:\\s*|\\.\\s*|^)\\s*([A-Za-z\\s]+?)\\s+chuyen tien",
+          "(?:tai|tại|tu|từ)\\s+([A-Za-z\\s]{4,20})(?:\\.|\\s+ND|$)",
+          "(?:tai|tại|tu|từ)\\s+(.+?)(?:\\.\\s*ND|\\s+ND|$)"
+        ]
+      }
     }
-
   ],
   "globalParserConfig": {
     "amountPatterns": [
@@ -546,5 +622,5 @@
       "mặt"
     ]
   },
-  "version": 19
+  "version": 20
 }

@@ -39,3 +39,5 @@ db/
 
 .agent/
 /drawio
+app/bulid/
+app/release/

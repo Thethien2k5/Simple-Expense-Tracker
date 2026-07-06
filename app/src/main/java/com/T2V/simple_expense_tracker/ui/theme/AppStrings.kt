@@ -56,7 +56,12 @@ data class AppStrings(
     val sourceSmsGateway: String,
     val statusProcessed: String,
     val statusUnparsed: String,
-    val payloadLabel: String
+    val payloadLabel: String,
+    val notificationPermissionTitle: String,
+    val notificationPermissionMessage: String,
+    val notificationPermissionConfirm: String,
+    val appLockedMessage: String,
+    val unlockButtonText: String
 )
 
 val VietnameseStrings = AppStrings(
@@ -112,7 +117,12 @@ val VietnameseStrings = AppStrings(
     sourceSmsGateway = "NGUỒN: SMS GATEWAY",
     statusProcessed = "ĐÃ XỬ LÝ",
     statusUnparsed = "CHƯA PHÂN TÍCH",
-    payloadLabel = "NỘI DUNG:"
+    payloadLabel = "NỘI DUNG:",
+    notificationPermissionTitle = "Yêu cầu quyền truy cập thông báo ngầm",
+    notificationPermissionMessage = "Để ứng dụng có thể tự động ghi nhận giao dịch thu chi từ thông báo biến động số dư các ngân hàng, bạn cần cấp quyền đọc thông báo ngầm cho hệ thống.\n\nĐây là quyền bắt buộc để ứng dụng hoạt động chính xác.",
+    notificationPermissionConfirm = "Cấp quyền ngay",
+    appLockedMessage = "Ứng dụng đang được khóa để bảo mật",
+    unlockButtonText = "MỞ KHÓA"
 )
 
 val EnglishStrings = AppStrings(
@@ -168,7 +178,12 @@ val EnglishStrings = AppStrings(
     sourceSmsGateway = "SOURCE: SMS GATEWAY",
     statusProcessed = "PROCESSED",
     statusUnparsed = "UNPARSED",
-    payloadLabel = "PAYLOAD:"
+    payloadLabel = "PAYLOAD:",
+    notificationPermissionTitle = "Notification Access Required",
+    notificationPermissionMessage = "To automatically record income and expense transactions from bank notification changes, you need to grant notification access to the system.\n\nThis is a mandatory permission for the app to function correctly.",
+    notificationPermissionConfirm = "Grant Permission",
+    appLockedMessage = "The app is locked for security",
+    unlockButtonText = "UNLOCK"
 )
 
 val JapaneseStrings = AppStrings(
@@ -224,7 +239,12 @@ val JapaneseStrings = AppStrings(
     sourceSmsGateway = "ソース: SMS ゲートウェイ",
     statusProcessed = "処理済み",
     statusUnparsed = "未解析",
-    payloadLabel = "ペイロード:"
+    payloadLabel = "ペイロード:",
+    notificationPermissionTitle = "通知へのアクセス権限が必要です",
+    notificationPermissionMessage = "銀行の通知から収入と支出の取引を自動的に記録するには、システムに通知へのアクセスを許可する必要があります。\n\nこれはアプリが正しく機能するために必須の権限です。",
+    notificationPermissionConfirm = "権限を許可する",
+    appLockedMessage = "アプリはセキュリティのためにロックされています",
+    unlockButtonText = "ロック解除"
 )
 
 val RussianStrings = AppStrings(
@@ -280,7 +300,12 @@ val RussianStrings = AppStrings(
     sourceSmsGateway = "ИСТОЧНИК: SMS-ШЛЮЗ",
     statusProcessed = "ОБРАБОТАНО",
     statusUnparsed = "НЕ РАСПАРСЕНО",
-    payloadLabel = "ДАННЫЕ:"
+    payloadLabel = "ДАННЫЕ:",
+    notificationPermissionTitle = "Требуется доступ к уведомлениям",
+    notificationPermissionMessage = "Для автоматической записи транзакций доходов и расходов из уведомлений банков вам необходимо предоставить системе доступ к уведомлениям.\n\nЭто обязательное разрешение для корректной работы приложения.",
+    notificationPermissionConfirm = "Предоставить разрешение",
+    appLockedMessage = "Приложение заблокировано в целях безопасности",
+    unlockButtonText = "РАЗБЛОКИРОВАТЬ"
 )
 
 val ChineseStrings = AppStrings(
@@ -336,7 +361,12 @@ val ChineseStrings = AppStrings(
     sourceSmsGateway = "来源: SMS 閘道",
     statusProcessed = "已处理",
     statusUnparsed = "未解析",
-    payloadLabel = "负载:"
+    payloadLabel = "负载:",
+    notificationPermissionTitle = "需要通知访问权限",
+    notificationPermissionMessage = "为了自动从银行余额变动通知中记录收支交易，您需要授予系统通知访问权限。\n\n这是应用正常运行的必要权限。",
+    notificationPermissionConfirm = "立即授权",
+    appLockedMessage = "应用已锁定以确保安全",
+    unlockButtonText = "解锁"
 )
 
 val LocalAppStrings = staticCompositionLocalOf<AppStrings> {
@@ -350,5 +380,15 @@ fun getAppStringsForLanguage(language: AppLanguage): AppStrings {
         AppLanguage.JAPANESE -> JapaneseStrings
         AppLanguage.RUSSIAN -> RussianStrings
         AppLanguage.CHINESE -> ChineseStrings
+    }
+}
+
+fun AppLanguage.getLocalizedName(strings: AppStrings): String {
+    return when (this) {
+        AppLanguage.VIETNAMESE -> strings.vietnamese
+        AppLanguage.ENGLISH -> strings.english
+        AppLanguage.CHINESE -> strings.chinese
+        AppLanguage.RUSSIAN -> strings.russian
+        AppLanguage.JAPANESE -> strings.japanese
     }
 }

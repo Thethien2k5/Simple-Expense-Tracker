@@ -125,7 +125,7 @@ fun SettingsPanel(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                state.currentLanguage.displayName,
+                                state.currentLanguage.getLocalizedName(LocalAppStrings.current),
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -360,7 +360,7 @@ private fun LanguageSelectionDialog(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = language.displayName,
+                            text = language.getLocalizedName(LocalAppStrings.current),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurface
                         )

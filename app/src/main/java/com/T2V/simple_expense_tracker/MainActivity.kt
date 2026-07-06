@@ -234,14 +234,14 @@ fun MainApp() {
             onDismissRequest = { /* Bắt buộc không cho đóng */ },
             title = {
                 Text(
-                    text = "Yêu cầu quyền truy cập thông báo ngầm",
+                    text = LocalAppStrings.current.notificationPermissionTitle,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
             },
             text = {
                 Text(
-                    text = "Để ứng dụng có thể tự động ghi nhận giao dịch thu chi từ thông báo biến động số dư các ngân hàng, bạn cần cấp quyền đọc thông báo ngầm cho hệ thống.\n\nĐây là quyền bắt buộc để ứng dụng hoạt động chính xác.",
+                    text = LocalAppStrings.current.notificationPermissionMessage,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             },
@@ -254,7 +254,7 @@ fun MainApp() {
                         context.startActivity(intent)
                     }
                 ) {
-                    Text("Cấp quyền ngay", color = MaterialTheme.colorScheme.onPrimary)
+                    Text(text = LocalAppStrings.current.notificationPermissionConfirm, color = MaterialTheme.colorScheme.onPrimary)
                 }
             },
             dismissButton = null,
@@ -361,7 +361,7 @@ fun LockScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Ứng dụng đang được khóa để bảo mật",
+                text = LocalAppStrings.current.appLockedMessage,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
@@ -390,7 +390,7 @@ fun LockScreen(
                         modifier = Modifier.size(20.dp)
                     )
                     Text(
-                        text = "MỞ KHÓA",
+                        text = LocalAppStrings.current.unlockButtonText,
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimary

@@ -1,5 +1,9 @@
 package com.T2V.simple_expense_tracker.data.mapper
 
+/**
+* Chuyển đổi giữ liệu giữa csdl và nghiệp vụ. Nhằm làm sạch và che dấu thông tin thô
+*/
+
 import com.T2V.simple_expense_tracker.data.local.entity.*
 import com.T2V.simple_expense_tracker.domain.model.*
 

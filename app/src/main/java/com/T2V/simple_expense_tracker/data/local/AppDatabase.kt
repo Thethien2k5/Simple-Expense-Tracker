@@ -11,8 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 /**
- * Cơ sở dữ liệu chính của ứng dụng sử dụng Room.
- * Bao gồm 3 bảng: BankAccount, RawNotification và Transaction.
+ * Khởi tạo và cấu hình cơ sở dữ liệu
  */
 @Database(
     entities = [
@@ -21,11 +20,11 @@ import kotlinx.coroutines.launch
         TransactionEntity::class
     ],
     version = 4,
-    exportSchema = false
+    exportSchema = false // không xuất json khi bulid
 )
 abstract class AppDatabase : RoomDatabase() {
 
-    abstract fun bankAccountDao(): BankAccountDao
+    abstract fun bankAccountDao(): BankAccountDao // kết nối để thực thi lệnh trong DAO
     abstract fun rawNotificationDao(): RawNotificationDao
     abstract fun transactionDao(): TransactionDao
 

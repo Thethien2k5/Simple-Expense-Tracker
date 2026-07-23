@@ -5,11 +5,11 @@ import com.T2V.simple_expense_tracker.data.local.entity.BankAccountEntity
 import kotlinx.coroutines.flow.Flow
 
 /**
- * Giao diện truy cập dữ liệu cho tài khoản ngân hàng.
+ * Thực hiện truy vấn với bảng *tài khoản ngân hàng*
  */
 @Dao
 interface BankAccountDao {
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    @Insert(onConflict = OnConflictStrategy.IGNORE) // Không ghi đè bản ghi cũ trong TH trùng và trả về -1
     suspend fun insertBankAccount(bankAccount: BankAccountEntity): Long
 
     @Update

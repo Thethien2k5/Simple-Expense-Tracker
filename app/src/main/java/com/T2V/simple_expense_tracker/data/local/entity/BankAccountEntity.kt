@@ -5,12 +5,11 @@ import androidx.room.PrimaryKey
 import androidx.room.Index
 
 /**
- * Đại diện cho một tài khoản ngân hàng trong ứng dụng.
- * Lưu trữ thông tin cơ bản về ngân hàng để phân loại giao dịch.
+ * Định nghĩa cấu trúc của bảng *tài khoản ngân hàng*
  */
 @Entity(
-    tableName = "bank_accounts",
-    indices = [Index(value = ["bankName", "accountNumber"], unique = true)]
+    tableName = "bank_accounts", // tên bảng trong db
+    indices = [Index(value = ["bankName", "accountNumber"], unique = true)] //khai báo chỉ mục "unique = true" không trùng
 )
 data class BankAccountEntity(
     @PrimaryKey(autoGenerate = true)

@@ -69,9 +69,6 @@ class BankNotificationListenerService : NotificationListenerService() {
             val title = extras.getCharSequence("android.title", "")?.toString() ?: ""
             val postTime = it.postTime
 
-            // --- Fix: Đọc nội dung với fallback đầy đủ ---
-            // Android đôi khi bundled notifications khiến android.text rỗng.
-            // Thứ tự ưu tiên: bigText > textLines > text > subText
             val rawText = extras.getCharSequence("android.text", "")?.toString() ?: ""
             val bigText = extras.getCharSequence("android.bigText", "")?.toString() ?: ""
             val subText = extras.getCharSequence("android.subText", "")?.toString() ?: ""
@@ -104,14 +101,6 @@ class BankNotificationListenerService : NotificationListenerService() {
         }
     }
 
-    /**
-     * Quy trình xử lý thông báo nâng cao:
-     * 1. Nhận diện ngân hàng.
-     * 2. Lưu thông báo thô (isProcessed = false).
-     * 3. Phân tích 3 tầng (Regex -> ML Kit -> Thủ công).
-     * 4. Kiểm tra tính nhất quán số dư.
-     * 5. Lưu giao dịch.
-     */
     private suspend fun processNotification(packageName: String, title: String, text: String, timestamp: Long) {
         try {
             // Bước 1: Xác định tên ngân hàng
@@ -138,8 +127,6 @@ class BankNotificationListenerService : NotificationListenerService() {
                     // Bước 4: Xác định BankAccount
                     val txAmount = if (parsedData.isCredit) parsedData.amount else -parsedData.amount
 
-                    // Fix: Bọc toàn bộ phần đọc + cập nhật số dư trong Mutex
-                    // để tránh race condition khi 2 thông báo xử lý song song
                     accountUpdateMutex.withLock {
                         // Đọc lại bankAccount trong mutex để có giá trị mới nhất
                         val freshBankAccount = findBankAccount(parsedData.accountNumber, bankName)

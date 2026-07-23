@@ -5,12 +5,11 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 
 /**
- * Lưu trữ nội dung thông báo thô từ ngân hàng.
- * isProcessed được đánh chỉ mục (Index) để tối ưu việc lọc các thông báo chưa xử lý.
+ *  Định nghĩa cấu trúc của bảng *thông báo thô*
  */
 @Entity(
     tableName = "raw_notifications",
-    indices = [Index(value = ["isProcessed"])]
+    indices = [Index(value = ["isProcessed"])] // khai báo chỉ mục hộ trợ tìm kiếm nhanh
 )
 data class RawNotificationEntity(
     @PrimaryKey(autoGenerate = true)

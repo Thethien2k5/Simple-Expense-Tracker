@@ -6,8 +6,7 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 
 /**
- * Lưu trữ thông tin giao dịch đã được phân tích.
- * Có các khóa ngoại liên kết tới thông báo thô, tài khoản ngân hàng và danh mục.
+ *  Định nghĩa cấu trúc của bảng *giao dịch*
  */
 @Entity(
     tableName = "transactions",
@@ -16,7 +15,7 @@ import androidx.room.PrimaryKey
             entity = RawNotificationEntity::class,
             parentColumns = ["id"],
             childColumns = ["rawNotificationId"],
-            onDelete = ForeignKey.CASCADE
+            onDelete = ForeignKey.CASCADE // xóa dây truyền
         ),
         ForeignKey(
             entity = BankAccountEntity::class,
